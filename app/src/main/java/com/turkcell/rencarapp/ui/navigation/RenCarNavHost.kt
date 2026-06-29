@@ -80,7 +80,14 @@ fun RenCarNavHost(
         composable(Screen.MainDashboard.route) {
             MainDashboardScreen(
                 isDarkTheme = isDarkTheme,
-                onThemeToggle = onThemeToggle
+                onThemeToggle = onThemeToggle,
+                onLogoutClick = {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = true
+                        }
+                    }
+                }
             )
         }
         composable(Screen.LicenseVerification.route) {

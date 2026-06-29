@@ -35,6 +35,7 @@ import com.turkcell.rencarapp.ui.components.RencarBottomNavigationBar
 fun MainDashboardScreen(
     isDarkTheme: Boolean,
     onThemeToggle: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var currentTab by remember { mutableStateOf(DashboardTab.Map) }
@@ -59,7 +60,8 @@ fun MainDashboardScreen(
                 DashboardTab.Wallet -> PlaceholderTabContent("Cüzdanım", "Kayıtlı kartlarınızı, bakiye bilgilerinizi ve ödeme geçmişinizi yönetin.")
                 DashboardTab.Profile -> ProfileScreen(
                     isDarkTheme = isDarkTheme,
-                    onThemeToggle = onThemeToggle
+                    onThemeToggle = onThemeToggle,
+                    onLogoutClick = onLogoutClick
                 )
             }
         }
@@ -454,7 +456,7 @@ fun PlaceholderTabContent(
 @Composable
 fun MainDashboardScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        MainDashboardScreen(isDarkTheme = false, onThemeToggle = {})
+        MainDashboardScreen(isDarkTheme = false, onThemeToggle = {}, onLogoutClick = {})
     }
 }
 
@@ -462,6 +464,6 @@ fun MainDashboardScreenLightPreview() {
 @Composable
 fun MainDashboardScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        MainDashboardScreen(isDarkTheme = true, onThemeToggle = {})
+        MainDashboardScreen(isDarkTheme = true, onThemeToggle = {}, onLogoutClick = {})
     }
 }

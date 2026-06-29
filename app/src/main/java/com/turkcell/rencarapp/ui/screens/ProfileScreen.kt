@@ -38,11 +38,56 @@ import com.turkcell.rencarapp.ui.theme.RencarTheme
 fun ProfileScreen(
     isDarkTheme: Boolean,
     onThemeToggle: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalRencarSpacing.current
     val context = LocalContext.current
     var isSettingsExpanded by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = "Çıkış Yap",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "Hesabınızdan çıkış yapmak istediğinize emin misiniz?",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogoutClick()
+                    }
+                ) {
+                    Text(
+                        text = "Çıkış Yap",
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(
+                        text = "İptal",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 
     Column(
         modifier = modifier
@@ -269,7 +314,7 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    Toast.makeText(context, "Çıkış yapılıyor...", Toast.LENGTH_SHORT).show()
+                    showLogoutDialog = true
                 },
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
@@ -500,7 +545,7 @@ fun ProfileAvatar(
 @Composable
 fun ProfileScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        ProfileScreen(isDarkTheme = false, onThemeToggle = {})
+        ProfileScreen(isDarkTheme = false, onThemeToggle = {}, onLogoutClick = {})
     }
 }
 
@@ -508,6 +553,6 @@ fun ProfileScreenLightPreview() {
 @Composable
 fun ProfileScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        ProfileScreen(isDarkTheme = true, onThemeToggle = {})
+        ProfileScreen(isDarkTheme = true, onThemeToggle = {}, onLogoutClick = {})
     }
 }
