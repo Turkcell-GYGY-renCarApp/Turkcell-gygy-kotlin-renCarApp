@@ -1,0 +1,513 @@
+package com.turkcell.rencarapp.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.turkcell.rencarapp.ui.icons.RencarIcons
+import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
+import com.turkcell.rencarapp.ui.theme.RencarTheme
+
+@Composable
+fun ProfileScreen(
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalRencarSpacing.current
+    val context = LocalContext.current
+    var isSettingsExpanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = spacing.md)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
+        verticalArrangement = Arrangement.spacedBy(spacing.md)
+    ) {
+        Spacer(modifier = Modifier.height(spacing.xs))
+
+        // 1. User Header Section
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = spacing.xs),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ProfileAvatar(size = 72.dp)
+            
+            Spacer(modifier = Modifier.width(spacing.md))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Deniz Yılmaz",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "+90 532 000 00 00",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Edit Profile Button
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isDarkTheme) Color(0xFF1E293B) else Color(0xFFF3F5F9))
+                    .clickable {
+                        Toast.makeText(context, "Profil düzenleme yakında!", Toast.LENGTH_SHORT).show()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = RencarIcons.Edit,
+                    contentDescription = "Profili Düzenle",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        // 2. Driving License Verification Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(spacing.md),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Shield status icon
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.3f) else Color(0xFFE6F4EA)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = RencarIcons.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(spacing.md))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Ehliyet doğrulandı",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "B sınıfı · geçerli",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Status pill badge
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFDCFCE7))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Onaylı",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF10B981)
+                        )
+                    )
+                }
+            }
+        }
+
+        // 3. Menu Options Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Item 1: Ödeme Yöntemleri
+                MenuItemRow(
+                    icon = RencarIcons.CreditCard,
+                    title = "Ödeme yöntemleri",
+                    onClick = {
+                        Toast.makeText(context, "Ödeme yöntemleri tıklanıldı.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = spacing.md),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                    thickness = 0.5.dp
+                )
+
+                // Item 2: Ayarlar (Normal row that expands on click)
+                MenuItemRow(
+                    icon = RencarIcons.Settings,
+                    title = "Ayarlar",
+                    onClick = { isSettingsExpanded = !isSettingsExpanded },
+                    showChevron = true,
+                    isExpanded = isSettingsExpanded
+                )
+
+                if (isSettingsExpanded) {
+                    // Under the settings row, nested item for Dark Theme toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onThemeToggle() }
+                            .padding(start = 54.dp, end = spacing.md, top = 8.dp, bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Karanlık mod",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Normal),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Switch(
+                            checked = isDarkTheme,
+                            onCheckedChange = { onThemeToggle() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        )
+                    }
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = spacing.md),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                    thickness = 0.5.dp
+                )
+
+                // Item 3: Yardım & destek
+                MenuItemRow(
+                    icon = RencarIcons.Help,
+                    title = "Yardım & destek",
+                    onClick = {
+                        Toast.makeText(context, "Yardım & destek tıklanıldı.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = spacing.md),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                    thickness = 0.5.dp
+                )
+
+                // Item 4: Davet et
+                MenuItemRow(
+                    icon = RencarIcons.Share,
+                    title = "Davet et · ₺50 kazan",
+                    onClick = {
+                        Toast.makeText(context, "Davet et tıklanıldı.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
+
+        // 4. Logout Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    Toast.makeText(context, "Çıkış yapılıyor...", Toast.LENGTH_SHORT).show()
+                },
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 18.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = RencarIcons.Logout,
+                    contentDescription = "Çıkış yap",
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(spacing.xs))
+                Text(
+                    text = "Çıkış yap",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFFEF4444)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(spacing.md))
+    }
+}
+
+@Composable
+fun MenuItemRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit,
+    showSwitch: Boolean = false,
+    isSwitchChecked: Boolean = false,
+    showChevron: Boolean = true,
+    isExpanded: Boolean = false
+) {
+    val spacing = LocalRencarSpacing.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = spacing.md, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(22.dp)
+        )
+        
+        Spacer(modifier = Modifier.width(spacing.md))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+
+        if (showSwitch) {
+            Switch(
+                checked = isSwitchChecked,
+                onCheckedChange = { onClick() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            )
+        } else if (showChevron) {
+            val rotationAngle = if (isExpanded) 90f else 0f
+            Icon(
+                imageVector = RencarIcons.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer(rotationZ = rotationAngle)
+            )
+        }
+    }
+}
+
+/**
+ * Custom vector portrait drawn with Compose Canvas to match the cartoon-avatar design.
+ */
+@Composable
+fun ProfileAvatar(
+    modifier: Modifier = Modifier,
+    size: Dp = 64.dp
+) {
+    Canvas(modifier = modifier.size(size)) {
+        val w = size.toPx()
+        val h = size.toPx()
+        val radius = w / 2f
+        val center = Offset(w / 2f, h / 2f)
+
+        // 1. Orange background circle
+        drawCircle(
+            color = Color(0xFFF97316),
+            radius = radius,
+            center = center
+        )
+
+        // Clip everything inside the boundary
+        val clipPath = Path().apply {
+            addOval(Rect(0f, 0f, w, h))
+        }
+
+        drawContext.canvas.save()
+        drawContext.canvas.clipPath(clipPath)
+
+        // 2. Shoulders / Shirt (dark blue)
+        drawOval(
+            color = Color(0xFF273546),
+            topLeft = Offset(w * 0.12f, h * 0.72f),
+            size = Size(w * 0.76f, h * 0.4f)
+        )
+
+        // 3. Neck (peach/beige)
+        drawRect(
+            color = Color(0xFFFFCC99),
+            topLeft = Offset(w * 0.42f, h * 0.58f),
+            size = Size(w * 0.16f, h * 0.16f)
+        )
+
+        // 4. Head / Face (peach/beige oval)
+        drawOval(
+            color = Color(0xFFFFCC99),
+            topLeft = Offset(w * 0.3f, h * 0.28f),
+            size = Size(w * 0.4f, h * 0.4f)
+        )
+
+        // 5. Hair (dark slate)
+        val hairPath = Path().apply {
+            moveTo(w * 0.3f, h * 0.4f)
+            quadraticTo(w * 0.26f, h * 0.23f, w * 0.42f, h * 0.21f)
+            quadraticTo(w * 0.55f, h * 0.14f, w * 0.68f, h * 0.25f)
+            quadraticTo(w * 0.74f, h * 0.35f, w * 0.7f, h * 0.45f)
+            lineTo(w * 0.65f, h * 0.42f)
+            quadraticTo(w * 0.62f, h * 0.3f, w * 0.5f, h * 0.28f)
+            quadraticTo(w * 0.38f, h * 0.3f, w * 0.35f, h * 0.42f)
+            close()
+        }
+        drawPath(path = hairPath, color = Color(0xFF1E293B))
+
+        // 6. Beard (dark slate)
+        val beardPath = Path().apply {
+            moveTo(w * 0.3f, h * 0.48f)
+            quadraticTo(w * 0.32f, h * 0.68f, w * 0.5f, h * 0.72f) // chin
+            quadraticTo(w * 0.68f, h * 0.68f, w * 0.7f, h * 0.48f)
+            lineTo(w * 0.63f, h * 0.49f)
+            quadraticTo(w * 0.60f, h * 0.62f, w * 0.5f, h * 0.64f)
+            quadraticTo(w * 0.40f, h * 0.62f, w * 0.37f, h * 0.49f)
+            close()
+        }
+        drawPath(path = beardPath, color = Color(0xFF1E293B))
+
+        // Mustache (dark slate)
+        val mustachePath = Path().apply {
+            moveTo(w * 0.38f, h * 0.56f)
+            quadraticTo(w * 0.45f, h * 0.53f, w * 0.5f, h * 0.56f)
+            quadraticTo(w * 0.55f, h * 0.53f, w * 0.62f, h * 0.56f)
+            quadraticTo(w * 0.5f, h * 0.61f, w * 0.38f, h * 0.56f)
+            close()
+        }
+        drawPath(path = mustachePath, color = Color(0xFF1E293B))
+
+        // 7. Eyes (black dots)
+        drawCircle(
+            color = Color(0xFF1E293B),
+            radius = w * 0.025f,
+            center = Offset(w * 0.44f, h * 0.46f)
+        )
+        drawCircle(
+            color = Color(0xFF1E293B),
+            radius = w * 0.025f,
+            center = Offset(w * 0.56f, h * 0.46f)
+        )
+
+        // Eyebrows (strokes)
+        val leftEyebrow = Path().apply {
+            moveTo(w * 0.4f, h * 0.41f)
+            quadraticTo(w * 0.44f, h * 0.39f, w * 0.48f, h * 0.41f)
+        }
+        drawPath(
+            path = leftEyebrow,
+            color = Color(0xFF1E293B),
+            style = Stroke(width = w * 0.018f)
+        )
+
+        val rightEyebrow = Path().apply {
+            moveTo(w * 0.52f, h * 0.41f)
+            quadraticTo(w * 0.56f, h * 0.39f, w * 0.6f, h * 0.41f)
+        }
+        drawPath(
+            path = rightEyebrow,
+            color = Color(0xFF1E293B),
+            style = Stroke(width = w * 0.018f)
+        )
+
+        // Mouth / Smile
+        val smilePath = Path().apply {
+            moveTo(w * 0.47f, h * 0.62f)
+            quadraticTo(w * 0.5f, h * 0.64f, w * 0.53f, h * 0.62f)
+        }
+        drawPath(
+            path = smilePath,
+            color = Color(0xFF1E293B),
+            style = Stroke(width = w * 0.012f)
+        )
+
+        drawContext.canvas.restore()
+    }
+}
+
+@Preview(showBackground = true, name = "Light Profile")
+@Composable
+fun ProfileScreenLightPreview() {
+    RencarTheme(darkTheme = false) {
+        ProfileScreen(isDarkTheme = false, onThemeToggle = {})
+    }
+}
+
+@Preview(showBackground = true, name = "Dark Profile")
+@Composable
+fun ProfileScreenDarkPreview() {
+    RencarTheme(darkTheme = true) {
+        ProfileScreen(isDarkTheme = true, onThemeToggle = {})
+    }
+}
