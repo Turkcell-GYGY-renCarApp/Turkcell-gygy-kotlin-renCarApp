@@ -86,7 +86,7 @@ fun LoginScreen(
 
             // Title
             Text(
-                text = "Tekrar hoş geldin",
+                text = "Hoş geldin",
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )

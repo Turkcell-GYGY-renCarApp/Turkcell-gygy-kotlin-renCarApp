@@ -38,9 +38,18 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
 * **Karar:** Tema değiştirme butonu Karşılama (Welcome) ekranından kaldırılarak yeni oluşturulan Profil ekranındaki "Ayarlar" menü satırına modern bir Switch/seçici ile taşınmıştır. Kullanıcının seçtiği tema durumu (Açık/Koyu) Jetpack DataStore Preferences kullanılarak yerel depolamada kalıcı hale getirilmiştir.
   * **Gerekçe:** Kullanıcı deneyimini iyileştirmek, tema ayarını uygulamanın ayarlar alanına almak ve uygulamanın yeniden başlatılması durumunda kullanıcının tema tercihini korumak (asenkron ve güvenli veri saklama).
   * **İlgili Dosyalar:**
-    * [ThemePreferences.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/data/ThemePreferences.kt)
+    * [ThemePreferenceRepository.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/data/preferences/ThemePreferenceRepository.kt)
     * [MainActivity.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/MainActivity.kt)
     * [WelcomeScreen.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/ui/screens/WelcomeScreen.kt)
     * [ProfileScreen.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/ui/screens/ProfileScreen.kt)
     * [build.gradle.kts](file:///c:/db/renCarApp/app/build.gradle.kts)
     * [libs.versions.toml](file:///c:/db/renCarApp/gradle/libs.versions.toml)
+
+## 5. Mimari Yapı (MVI) ve Bağımlılık Enjeksiyonu (Hilt)
+
+* **Karar:** Uygulamanın genel mimarisi MVI (Model-View-Intent) olarak kurgulanmış ve bağımlılıkların yönetimi için Dagger Hilt kütüphanesi tercih edilmiştir. Tema tercihi veri katmanı repository deseniyle sarmalanmış ve MainActivity üzerinde doğrudan alan enjeksiyonu (Field Injection) ile kullanılmıştır.
+  * **Gerekçe:** State yönetimini tek bir kaynaktan (Single Source of Truth) yapmak, kullanıcı etkileşimlerini ve arayüz durumlarını tek yönlü veri akışı ile daha öngörülebilir kılmak, test edilebilirliği artırmak ve uygulama genelindeki bağımlılıkları Hilt ile merkezileştirmek.
+  * **İlgili Dosyalar:**
+    * [RenCarApplication.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/RenCarApplication.kt)
+    * [MainActivity.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/MainActivity.kt)
+    * [ThemePreferenceRepository.kt](file:///c:/db/renCarApp/app/src/main/java/com/turkcell/rencarapp/data/preferences/ThemePreferenceRepository.kt)
