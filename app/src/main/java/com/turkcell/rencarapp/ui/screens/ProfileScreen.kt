@@ -39,6 +39,11 @@ fun ProfileScreen(
     isDarkTheme: Boolean,
     onThemeToggle: () -> Unit,
     onLogoutClick: () -> Unit,
+    userFullName: String,
+    userPhone: String,
+    userRole: String,
+    licenseStatus: String,
+    onLicenseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalRencarSpacing.current
@@ -114,7 +119,7 @@ fun ProfileScreen(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Deniz Yılmaz",
+                    text = userFullName.ifEmpty { "Kullanıcı" },
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -123,7 +128,7 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "+90 532 000 00 00",
+                    text = userPhone.ifEmpty { "Telefon Numarası Yok" },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -150,8 +155,59 @@ fun ProfileScreen(
         }
 
         // 2. Driving License Verification Card
+        val shieldBgColor = when (licenseStatus) {
+            "APPROVED" -> if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.3f) else Color(0xFFE6F4EA)
+            "UNDER_REVIEW" -> if (isDarkTheme) Color(0xFF78350F).copy(alpha = 0.3f) else Color(0xFFFEF3C7)
+            "REJECTED" -> if (isDarkTheme) Color(0xFF7F1D1D).copy(alpha = 0.3f) else Color(0xFFFDE8E8)
+            else -> if (isDarkTheme) Color(0xFF374151).copy(alpha = 0.3f) else Color(0xFFF3F4F6)
+        }
+        val shieldIconColor = when (licenseStatus) {
+            "APPROVED" -> Color(0xFF10B981)
+            "UNDER_REVIEW" -> Color(0xFFD97706)
+            "REJECTED" -> Color(0xFFEF4444)
+            else -> Color(0xFF9CA3AF)
+        }
+        val statusTitle = when (licenseStatus) {
+            "APPROVED" -> "Ehliyet doğrulandı"
+            "UNDER_REVIEW" -> "Ehliyet onay bekliyor"
+            "REJECTED" -> "Ehliyet reddedildi"
+            else -> "Ehliyet yüklenmedi"
+        }
+        val statusSubtitle = when (licenseStatus) {
+            "APPROVED" -> "B sınıfı · geçerli"
+            "UNDER_REVIEW" -> "Belgeleriniz inceleniyor"
+            "REJECTED" -> "Yeniden yüklemek için dokunun"
+            else -> "Kiralamak için ehliyet yükleyin"
+        }
+        val badgeText = when (licenseStatus) {
+            "APPROVED" -> "Onaylı"
+            "UNDER_REVIEW" -> "Beklemede"
+            "REJECTED" -> "Reddedildi"
+            else -> "Yükle"
+        }
+        val badgeBgColor = when (licenseStatus) {
+            "APPROVED" -> if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFDCFCE7)
+            "UNDER_REVIEW" -> if (isDarkTheme) Color(0xFF78350F).copy(alpha = 0.5f) else Color(0xFFFEF3C7)
+            "REJECTED" -> if (isDarkTheme) Color(0xFF7F1D1D).copy(alpha = 0.5f) else Color(0xFFFDE8E8)
+            else -> if (isDarkTheme) Color(0xFF374151).copy(alpha = 0.5f) else Color(0xFFE5E7EB)
+        }
+        val badgeTextColor = when (licenseStatus) {
+            "APPROVED" -> Color(0xFF10B981)
+            "UNDER_REVIEW" -> Color(0xFFD97706)
+            "REJECTED" -> Color(0xFFEF4444)
+            else -> Color(0xFF6B7280)
+        }
+
+        val isClickable = licenseStatus == "NOT_SUBMITTED" || licenseStatus == "REJECTED"
+
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isClickable) {
+                        Modifier.clickable { onLicenseClick() }
+                    } else Modifier
+                ),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -169,13 +225,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.3f) else Color(0xFFE6F4EA)),
+                        .background(shieldBgColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = RencarIcons.Shield,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
+                        tint = shieldIconColor,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -184,13 +240,13 @@ fun ProfileScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Ehliyet doğrulandı",
+                        text = statusTitle,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "B sınıfı · geçerli",
+                        text = statusSubtitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -200,15 +256,15 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
-                        .background(if (isDarkTheme) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFDCFCE7))
+                        .background(badgeBgColor)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Onaylı",
+                        text = badgeText,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
+                            color = badgeTextColor
                         )
                     )
                 }
@@ -545,7 +601,16 @@ fun ProfileAvatar(
 @Composable
 fun ProfileScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        ProfileScreen(isDarkTheme = false, onThemeToggle = {}, onLogoutClick = {})
+        ProfileScreen(
+            isDarkTheme = false,
+            onThemeToggle = {},
+            onLogoutClick = {},
+            userFullName = "Deniz Yılmaz",
+            userPhone = "+90 532 000 00 00",
+            userRole = "CUSTOMER",
+            licenseStatus = "APPROVED",
+            onLicenseClick = {}
+        )
     }
 }
 
@@ -553,6 +618,15 @@ fun ProfileScreenLightPreview() {
 @Composable
 fun ProfileScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        ProfileScreen(isDarkTheme = true, onThemeToggle = {}, onLogoutClick = {})
+        ProfileScreen(
+            isDarkTheme = true,
+            onThemeToggle = {},
+            onLogoutClick = {},
+            userFullName = "Deniz Yılmaz",
+            userPhone = "+90 532 000 00 00",
+            userRole = "PENDING",
+            licenseStatus = "NOT_SUBMITTED",
+            onLicenseClick = {}
+        )
     }
 }

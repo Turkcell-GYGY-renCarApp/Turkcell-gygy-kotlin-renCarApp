@@ -1,11 +1,10 @@
 package com.turkcell.rencarapp.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,6 +18,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -27,10 +27,15 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.turkcell.rencarapp.ui.icons.RencarIcons
 import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
 import com.turkcell.rencarapp.ui.theme.RencarTheme
 import com.turkcell.rencarapp.ui.theme.otpDigitTextStyle
+import com.turkcell.rencarapp.ui.contract.VerifyEffect
+import com.turkcell.rencarapp.ui.contract.VerifyIntent
+import com.turkcell.rencarapp.ui.contract.VerifyState
+import com.turkcell.rencarapp.ui.viewmodel.VerifyViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -39,12 +44,51 @@ fun VerifyScreen(
     onBackClick: () -> Unit,
     onChangeNumberClick: () -> Unit,
     onVerifySuccess: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: VerifyViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is VerifyEffect.NavigateToDashboard -> {
+                    onVerifySuccess()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.onIntent(VerifyIntent.ClearError)
+        }
+    }
+
+    VerifyScreenContent(
+        state = state,
+        phoneNumber = phoneNumber,
+        onIntent = { viewModel.onIntent(it) },
+        onBackClick = onBackClick,
+        onChangeNumberClick = onChangeNumberClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun VerifyScreenContent(
+    state: VerifyState,
+    phoneNumber: String,
+    onIntent: (VerifyIntent) -> Unit,
+    onBackClick: () -> Unit,
+    onChangeNumberClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
     val spacing = LocalRencarSpacing.current
     
-    var otpCode by remember { mutableStateOf("") }
     var isTextFieldFocused by remember { mutableStateOf(false) }
     var timeLeft by remember { mutableStateOf(42) } // Starts at 0:42 as in design
     
@@ -161,11 +205,11 @@ fun VerifyScreen(
 
             // Hidden BasicTextField to receive keyboard input
             BasicTextField(
-                value = otpCode,
+                value = state.code,
                 onValueChange = { input ->
                     val cleanInput = input.filter { it.isDigit() }
                     if (cleanInput.length <= 6) {
-                        otpCode = cleanInput
+                        onIntent(VerifyIntent.CodeChanged(cleanInput))
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -186,8 +230,8 @@ fun VerifyScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 for (i in 0 until 6) {
-                    val isFocusedBox = isTextFieldFocused && otpCode.length == i
-                    val char = if (otpCode.length > i) otpCode[i].toString() else ""
+                    val isFocusedBox = isTextFieldFocused && state.code.length == i
+                    val char = if (state.code.length > i) state.code[i].toString() else ""
                     
                     Box(
                         contentAlignment = Alignment.Center,
@@ -246,7 +290,7 @@ fun VerifyScreen(
                     color = if (timeLeft > 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable(enabled = timeLeft == 0) {
                         timeLeft = 42
-                        otpCode = ""
+                        onIntent(VerifyIntent.CodeChanged(""))
                     }
                 )
             }
@@ -255,8 +299,8 @@ fun VerifyScreen(
 
             // Primary Button: "Doğrula ve Devam Et"
             Button(
-                onClick = onVerifySuccess,
-                enabled = otpCode.length == 6,
+                onClick = { onIntent(VerifyIntent.Verify(phoneNumber)) },
+                enabled = state.code.length == 6 && !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -275,10 +319,14 @@ fun VerifyScreen(
                     disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
             ) {
-                Text(
-                    text = "Doğrula ve Devam Et",
-                    style = MaterialTheme.typography.labelLarge
-                )
+                if (state.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        text = "Doğrula ve Devam Et",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(spacing.xl))
@@ -311,11 +359,12 @@ fun VerifyScreen(
 @Composable
 fun VerifyScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        VerifyScreen(
+        VerifyScreenContent(
+            state = VerifyState(),
             phoneNumber = "5320000000",
+            onIntent = {},
             onBackClick = {},
-            onChangeNumberClick = {},
-            onVerifySuccess = {}
+            onChangeNumberClick = {}
         )
     }
 }
@@ -324,11 +373,12 @@ fun VerifyScreenLightPreview() {
 @Composable
 fun VerifyScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        VerifyScreen(
+        VerifyScreenContent(
+            state = VerifyState(),
             phoneNumber = "5320000000",
+            onIntent = {},
             onBackClick = {},
-            onChangeNumberClick = {},
-            onVerifySuccess = {}
+            onChangeNumberClick = {}
         )
     }
 }

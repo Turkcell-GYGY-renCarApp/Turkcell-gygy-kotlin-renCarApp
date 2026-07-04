@@ -24,21 +24,65 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.turkcell.rencarapp.ui.icons.RencarIcons
 import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
 import com.turkcell.rencarapp.ui.theme.RencarTheme
+import com.turkcell.rencarapp.ui.contract.LoginEffect
+import com.turkcell.rencarapp.ui.contract.LoginIntent
+import com.turkcell.rencarapp.ui.contract.LoginState
+import com.turkcell.rencarapp.ui.viewmodel.LoginViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onBackClick: () -> Unit,
     onCodeSent: (String) -> Unit,
     onRegisterClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is LoginEffect.NavigateToVerify -> {
+                    onCodeSent(effect.phoneNumber)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.onIntent(LoginIntent.ClearError)
+        }
+    }
+
+    LoginScreenContent(
+        state = state,
+        onIntent = { viewModel.onIntent(it) },
+        onBackClick = onBackClick,
+        onRegisterClick = onRegisterClick,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginScreenContent(
+    state: LoginState,
+    onIntent: (LoginIntent) -> Unit,
+    onBackClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
     val spacing = LocalRencarSpacing.current
-    var phoneNumber by remember { mutableStateOf("") }
 
     Box(
         modifier = modifier
@@ -144,12 +188,12 @@ fun LoginScreen(
 
                 // Phone Input Field
                 OutlinedTextField(
-                    value = phoneNumber,
+                    value = state.phoneNumber,
                     onValueChange = { input ->
                         // Clean non-digits and limit to 10 characters
                         val cleanInput = input.filter { it.isDigit() }
                         if (cleanInput.length <= 10) {
-                            phoneNumber = cleanInput
+                            onIntent(LoginIntent.PhoneChanged(cleanInput))
                         }
                     },
                     modifier = Modifier
@@ -206,10 +250,11 @@ fun LoginScreen(
             // Primary Button: "Kod Gönder" with RencarIcons.Sms
             Button(
                 onClick = {
-                    if (phoneNumber.length == 10) {
-                        onCodeSent(phoneNumber)
+                    if (state.phoneNumber.length == 10) {
+                        onIntent(LoginIntent.SendOtp)
                     }
                 },
+                enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -226,20 +271,24 @@ fun LoginScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = RencarIcons.Sms,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(spacing.xs))
-                    Text(
-                        text = "Kod Gönder",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                if (state.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Sms,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(spacing.xs))
+                        Text(
+                            text = "Kod Gönder",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
 
@@ -313,7 +362,12 @@ class PhoneVisualTransformation : VisualTransformation {
 @Composable
 fun LoginScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        LoginScreen(onBackClick = {}, onCodeSent = {}, onRegisterClick = {})
+        LoginScreenContent(
+            state = LoginState(),
+            onIntent = {},
+            onBackClick = {},
+            onRegisterClick = {}
+        )
     }
 }
 
@@ -321,6 +375,11 @@ fun LoginScreenLightPreview() {
 @Composable
 fun LoginScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        LoginScreen(onBackClick = {}, onCodeSent = {}, onRegisterClick = {})
+        LoginScreenContent(
+            state = LoginState(),
+            onIntent = {},
+            onBackClick = {},
+            onRegisterClick = {}
+        )
     }
 }

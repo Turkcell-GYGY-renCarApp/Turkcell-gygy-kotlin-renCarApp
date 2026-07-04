@@ -30,15 +30,36 @@ import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
 import com.turkcell.rencarapp.ui.theme.RencarTheme
 import com.turkcell.rencarapp.ui.components.DashboardTab
 import com.turkcell.rencarapp.ui.components.RencarBottomNavigationBar
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.turkcell.rencarapp.ui.viewmodel.AuthViewModel
+import com.turkcell.rencarapp.ui.viewmodel.LicenseViewModel
+import com.turkcell.rencarapp.ui.contract.LicenseIntent
 
 @Composable
 fun MainDashboardScreen(
     isDarkTheme: Boolean,
     onThemeToggle: () -> Unit,
     onLogoutClick: () -> Unit,
+    onLicenseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var currentTab by remember { mutableStateOf(DashboardTab.Map) }
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val licenseViewModel: LicenseViewModel = hiltViewModel()
+
+    LaunchedEffect(currentTab) {
+        if (currentTab == DashboardTab.Profile) {
+            authViewModel.getProfile()
+            licenseViewModel.onIntent(LicenseIntent.GetStatus)
+        }
+    }
+
+    val fullName by authViewModel.userFullName.collectAsState()
+    val phone by authViewModel.userPhone.collectAsState()
+    val role by authViewModel.userRole.collectAsState()
+
+    val licenseState by licenseViewModel.state.collectAsState()
+    val licenseStatus = licenseState.statusResponse?.status ?: "NOT_SUBMITTED"
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -61,7 +82,14 @@ fun MainDashboardScreen(
                 DashboardTab.Profile -> ProfileScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeToggle = onThemeToggle,
-                    onLogoutClick = onLogoutClick
+                    onLogoutClick = {
+                        authViewModel.logout(onLogoutClick)
+                    },
+                    userFullName = fullName,
+                    userPhone = phone,
+                    userRole = role,
+                    licenseStatus = licenseStatus,
+                    onLicenseClick = onLicenseClick
                 )
             }
         }
@@ -456,7 +484,12 @@ fun PlaceholderTabContent(
 @Composable
 fun MainDashboardScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        MainDashboardScreen(isDarkTheme = false, onThemeToggle = {}, onLogoutClick = {})
+        MainDashboardScreen(
+            isDarkTheme = false,
+            onThemeToggle = {},
+            onLogoutClick = {},
+            onLicenseClick = {}
+        )
     }
 }
 
@@ -464,6 +497,11 @@ fun MainDashboardScreenLightPreview() {
 @Composable
 fun MainDashboardScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        MainDashboardScreen(isDarkTheme = true, onThemeToggle = {}, onLogoutClick = {})
+        MainDashboardScreen(
+            isDarkTheme = true,
+            onThemeToggle = {},
+            onLogoutClick = {},
+            onLicenseClick = {}
+        )
     }
 }

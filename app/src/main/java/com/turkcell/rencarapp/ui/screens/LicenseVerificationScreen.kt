@@ -1,6 +1,11 @@
 package com.turkcell.rencarapp.ui.screens
 
+import android.widget.Toast
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,8 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,7 +23,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,24 +36,88 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.turkcell.rencarapp.R
 import com.turkcell.rencarapp.ui.icons.RencarIcons
 import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
 import com.turkcell.rencarapp.ui.theme.LocalRencarColors
 import com.turkcell.rencarapp.ui.theme.RencarTheme
+import com.turkcell.rencarapp.ui.contract.LicenseEffect
+import com.turkcell.rencarapp.ui.contract.LicenseIntent
+import com.turkcell.rencarapp.ui.contract.LicenseState
+import com.turkcell.rencarapp.ui.viewmodel.LicenseViewModel
 
 @Composable
 fun LicenseVerificationScreen(
+    onBackClick: () -> Unit,
+    onContinueClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LicenseViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.onIntent(LicenseIntent.GetStatus)
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is LicenseEffect.NavigateToSelfie -> {
+                    Toast.makeText(context, "Ehliyet başarıyla yüklendi", Toast.LENGTH_SHORT).show()
+                    onContinueClick()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(state.statusError) {
+        state.statusError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.onIntent(LicenseIntent.ClearError)
+        }
+    }
+
+    LaunchedEffect(state.uploadError) {
+        state.uploadError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.onIntent(LicenseIntent.ClearError)
+        }
+    }
+
+    LicenseVerificationScreenContent(
+        state = state,
+        onIntent = { viewModel.onIntent(it) },
+        onBackClick = onBackClick,
+        onContinueClick = onContinueClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun LicenseVerificationScreenContent(
+    state: LicenseState,
+    onIntent: (LicenseIntent) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
     val spacing = LocalRencarSpacing.current
-    val extColors = LocalRencarColors.current
 
-    // Information box description with bold "birkaç dakika"
-    val infoText = rememberInfoText()
+    val frontLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            onIntent(LicenseIntent.FrontImageChanged(uri))
+        }
+    }
+
+    val backLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            onIntent(LicenseIntent.BackImageChanged(uri))
+        }
+    }
 
     Box(
         modifier = modifier
@@ -106,114 +177,300 @@ fun LicenseVerificationScreen(
 
             Spacer(modifier = Modifier.height(spacing.lg))
 
-            // Step Progress Bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Step 1: Active
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("1", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.width(spacing.xxs))
-                    Text("Ehliyet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                }
-                
-                // Line
+            if (state.isStatusLoading) {
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .padding(horizontal = spacing.xs)
-                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                )
-
-                // Step 2: Inactive
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                            .background(Color.Transparent)
-                    ) {
-                        Text("2", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.width(spacing.xxs))
-                    Text("Selfie", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-
-                // Line
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .padding(horizontal = spacing.xs)
-                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                )
-
-                // Step 3: Inactive
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        contentAlignment = Alignment.Center,
+            } else {
+                val status = state.statusResponse?.status ?: "NOT_SUBMITTED"
+                if (status == "APPROVED") {
+                    // Already Approved UI
+                    Column(
                         modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                            .background(Color.Transparent)
+                            .fillMaxWidth()
+                            .weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("3", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE6F4EA))
+                        ) {
+                            Icon(
+                                imageVector = RencarIcons.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(spacing.lg))
+                        Text(
+                            text = "Ehliyetiniz Onaylandı",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(spacing.xs))
+                        Text(
+                            text = "Harika! Ehliyetiniz başarıyla doğrulandı ve artık araç kiralayabilirsiniz.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = spacing.md),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(spacing.xl))
+                        Button(
+                            onClick = onContinueClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Devam Et", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
-                    Spacer(modifier = Modifier.width(spacing.xxs))
-                    Text("Onay", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else if (status == "UNDER_REVIEW") {
+                    // Under Review UI
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFFEF3C7))
+                        ) {
+                            Icon(
+                                imageVector = RencarIcons.Shield,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(spacing.lg))
+                        Text(
+                            text = "Belgeleriniz İnceleniyor",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(spacing.xs))
+                        Text(
+                            text = "Ehliyet bilgileriniz ekibimiz tarafından kontrol ediliyor. Bu işlem genellikle birkaç dakika sürer.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = spacing.md),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(spacing.xl))
+                        Button(
+                            onClick = onContinueClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onBackground
+                            )
+                        ) {
+                            Text("Ana Sayfaya Git", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                } else {
+                    // NOT_SUBMITTED or REJECTED: Show upload flow
+                    UploadFlowContent(
+                        isDark = isDark,
+                        spacing = spacing,
+                        rejectReason = state.statusResponse?.rejectReason,
+                        frontBitmap = state.frontBitmap,
+                        backBitmap = state.backBitmap,
+                        onFrontClick = { frontLauncher.launch("image/*") },
+                        onBackClick = { backLauncher.launch("image/*") },
+                        onUploadClick = { onIntent(LicenseIntent.UploadLicense) },
+                        isLoading = state.isUploading
+                    )
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(spacing.xl))
+@Composable
+fun UploadFlowContent(
+    isDark: Boolean,
+    spacing: com.turkcell.rencarapp.ui.theme.RencarSpacing,
+    rejectReason: String?,
+    frontBitmap: Bitmap?,
+    backBitmap: Bitmap?,
+    onFrontClick: () -> Unit,
+    onBackClick: () -> Unit,
+    onUploadClick: () -> Unit,
+    isLoading: Boolean
+) {
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+    val infoText = rememberInfoText()
 
-            // Section 1: Ehliyet ön yüz
-            Text(
-                text = "Ehliyet ön yüz",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = spacing.xs)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Step Progress Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Step 1: Active
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("1", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.width(spacing.xxs))
+                Text("Ehliyet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            }
+            
+            // Line
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(1.dp)
+                    .padding(horizontal = spacing.xs)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             )
 
-            // Vektörel Ehliyet Ön Yüz Kartı
-            val outlineColor = MaterialTheme.colorScheme.outlineVariant
+            // Step 2: Inactive
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .background(Color.Transparent)
+                ) {
+                    Text("2", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+                Spacer(modifier = Modifier.width(spacing.xxs))
+                Text("Selfie", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // Line
             Box(
-                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(1.dp)
+                    .padding(horizontal = spacing.xs)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            )
+
+            // Step 3: Inactive
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .background(Color.Transparent)
+                ) {
+                    Text("3", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+                Spacer(modifier = Modifier.width(spacing.xxs))
+                Text("Onay", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(spacing.xl))
+
+        // Red rejection alert box if rejectReason is present
+        if (!rejectReason.isNullOrBlank()) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
+                    .padding(bottom = spacing.md)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (isDark) Color(0xFF111827).copy(alpha = 0.3f) else Color(0xFFF9FAFB).copy(alpha = 0.5f)
-                    )
-                    .drawWithContent {
-                        val stroke = Stroke(
-                            width = 1.5.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
-                        )
-                        drawContent()
-                        drawRoundRect(
-                            color = outlineColor,
-                            style = stroke,
-                            cornerRadius = CornerRadius(16.dp.toPx())
-                        )
-                    }
-                    .clickable { /* Photo Upload Trigger */ }
+                    .background(Color(0xFFFDE8E8))
+                    .border(1.dp, Color(0xFFF8B4B4), MaterialTheme.shapes.medium)
+                    .padding(spacing.md)
             ) {
+                Column {
+                    Text(
+                        text = "Ehliyetiniz Reddedildi",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF9B1C1C)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Gerekçe: $rejectReason",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFC81E1E)
+                    )
+                }
+            }
+        }
+
+        // Section 1: Ehliyet ön yüz
+        Text(
+            text = "Ehliyet ön yüz",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = spacing.xs)
+        )
+
+        // Dotted card container for front page
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(
+                    if (isDark) Color(0xFF111827).copy(alpha = 0.3f) else Color(0xFFF9FAFB).copy(alpha = 0.5f)
+                )
+                .drawWithContent {
+                    val stroke = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                    )
+                    drawContent()
+                    drawRoundRect(
+                        color = outlineColor,
+                        style = stroke,
+                        cornerRadius = CornerRadius(16.dp.toPx())
+                    )
+                }
+                .clickable { onFrontClick() }
+        ) {
+            if (frontBitmap != null) {
+                Image(
+                    bitmap = frontBitmap.asImageBitmap(),
+                    contentDescription = "Ön yüz önizleme",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -240,43 +497,51 @@ fun LicenseVerificationScreen(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(spacing.md))
+        Spacer(modifier = Modifier.height(spacing.md))
 
-            // Section 2: Ehliyet arka yüz
-            Text(
-                text = "Ehliyet arka yüz",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = spacing.xs)
-            )
+        // Section 2: Ehliyet arka yüz
+        Text(
+            text = "Ehliyet arka yüz",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = spacing.xs)
+        )
 
-            // Kesikli Kenarlıklı Kamera Buton Alanı
-
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(130.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (isDark) Color(0xFF111827).copy(alpha = 0.3f) else Color(0xFFF9FAFB).copy(alpha = 0.5f)
+        // Dotted card container for back page
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(
+                    if (isDark) Color(0xFF111827).copy(alpha = 0.3f) else Color(0xFFF9FAFB).copy(alpha = 0.5f)
+                )
+                .drawWithContent {
+                    val stroke = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
                     )
-                    .drawWithContent {
-                        val stroke = Stroke(
-                            width = 1.5.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
-                        )
-                        drawContent()
-                        drawRoundRect(
-                            color = outlineColor,
-                            style = stroke,
-                            cornerRadius = CornerRadius(16.dp.toPx())
-                        )
-                    }
-                    .clickable { /* Photo Upload Trigger */ }
-            ) {
+                    drawContent()
+                    drawRoundRect(
+                        color = outlineColor,
+                        style = stroke,
+                        cornerRadius = CornerRadius(16.dp.toPx())
+                    )
+                }
+                .clickable { onBackClick() }
+        ) {
+            if (backBitmap != null) {
+                Image(
+                    bitmap = backBitmap.asImageBitmap(),
+                    contentDescription = "Arka yüz önizleme",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -303,67 +568,76 @@ fun LicenseVerificationScreen(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(spacing.md))
+        Spacer(modifier = Modifier.height(spacing.md))
 
-            // Info Warning Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(spacing.md)
+        // Info Warning Box
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(spacing.md)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top
             ) {
-                Row(
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        imageVector = RencarIcons.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .padding(top = 2.dp)
-                    )
-                    Spacer(modifier = Modifier.width(spacing.xs))
-                    Text(
-                        text = infoText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // CTA Button: "Devam Et"
-            Button(
-                onClick = onContinueClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(
-                        elevation = if (isDark) 16.dp else 4.dp,
-                        shape = MaterialTheme.shapes.extraLarge,
-                        clip = false,
-                        ambientColor = MaterialTheme.colorScheme.primary,
-                        spotColor = MaterialTheme.colorScheme.primary
-                    ),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                Icon(
+                    imageVector = RencarIcons.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(top = 2.dp)
                 )
-            ) {
+                Spacer(modifier = Modifier.width(spacing.xs))
                 Text(
-                    text = "Devam Et",
+                    text = infoText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 20.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // CTA Button: "Devam Et"
+        Button(
+            onClick = onUploadClick,
+            enabled = !isLoading && frontBitmap != null && backBitmap != null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .shadow(
+                    elevation = if (isDark) 16.dp else 4.dp,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    clip = false,
+                    ambientColor = MaterialTheme.colorScheme.primary,
+                    spotColor = MaterialTheme.colorScheme.primary
+                ),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.5.dp
+                )
+            } else {
+                Text(
+                    text = "Gönder ve Devam Et",
                     style = MaterialTheme.typography.labelLarge
                 )
             }
-
-            Spacer(modifier = Modifier.height(spacing.md))
         }
+
+        Spacer(modifier = Modifier.height(spacing.md))
     }
 }
 
@@ -382,7 +656,9 @@ private fun rememberInfoText() = remember {
 @Composable
 fun LicenseVerificationScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        LicenseVerificationScreen(
+        LicenseVerificationScreenContent(
+            state = LicenseState(),
+            onIntent = {},
             onBackClick = {},
             onContinueClick = {}
         )
@@ -393,7 +669,9 @@ fun LicenseVerificationScreenLightPreview() {
 @Composable
 fun LicenseVerificationScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        LicenseVerificationScreen(
+        LicenseVerificationScreenContent(
+            state = LicenseState(),
+            onIntent = {},
             onBackClick = {},
             onContinueClick = {}
         )
