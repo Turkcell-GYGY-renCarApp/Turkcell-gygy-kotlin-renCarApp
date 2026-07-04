@@ -140,23 +140,21 @@ fun LicenseVerificationScreenContent(
             ) {
                 IconButton(
                     onClick = onBackClick,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    ),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .border(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         )
-                        .clip(RoundedCornerShape(12.dp))
                 ) {
                     Icon(
                         imageVector = RencarIcons.ArrowBack,
                         contentDescription = "Geri Dön",
-                        modifier = Modifier.size(20.dp)
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(spacing.md))

@@ -478,9 +478,13 @@ fun ProfileAvatar(
         val radius = w / 2f
         val center = Offset(w / 2f, h / 2f)
 
-        // 1. Orange background circle
+        // 1. Beautiful gradient background circle
         drawCircle(
-            color = Color(0xFFF97316),
+            brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(Color(0xFF6366F1), Color(0xFF3B82F6)),
+                start = Offset(0f, 0f),
+                end = Offset(w, h)
+            ),
             radius = radius,
             center = center
         )
@@ -493,104 +497,18 @@ fun ProfileAvatar(
         drawContext.canvas.save()
         drawContext.canvas.clipPath(clipPath)
 
-        // 2. Shoulders / Shirt (dark blue)
+        // 2. Shoulders (neutral white shape)
         drawOval(
-            color = Color(0xFF273546),
-            topLeft = Offset(w * 0.12f, h * 0.72f),
-            size = Size(w * 0.76f, h * 0.4f)
+            color = Color.White.copy(alpha = 0.9f),
+            topLeft = Offset(w * 0.15f, h * 0.7f),
+            size = Size(w * 0.7f, h * 0.5f)
         )
 
-        // 3. Neck (peach/beige)
-        drawRect(
-            color = Color(0xFFFFCC99),
-            topLeft = Offset(w * 0.42f, h * 0.58f),
-            size = Size(w * 0.16f, h * 0.16f)
-        )
-
-        // 4. Head / Face (peach/beige oval)
-        drawOval(
-            color = Color(0xFFFFCC99),
-            topLeft = Offset(w * 0.3f, h * 0.28f),
-            size = Size(w * 0.4f, h * 0.4f)
-        )
-
-        // 5. Hair (dark slate)
-        val hairPath = Path().apply {
-            moveTo(w * 0.3f, h * 0.4f)
-            quadraticTo(w * 0.26f, h * 0.23f, w * 0.42f, h * 0.21f)
-            quadraticTo(w * 0.55f, h * 0.14f, w * 0.68f, h * 0.25f)
-            quadraticTo(w * 0.74f, h * 0.35f, w * 0.7f, h * 0.45f)
-            lineTo(w * 0.65f, h * 0.42f)
-            quadraticTo(w * 0.62f, h * 0.3f, w * 0.5f, h * 0.28f)
-            quadraticTo(w * 0.38f, h * 0.3f, w * 0.35f, h * 0.42f)
-            close()
-        }
-        drawPath(path = hairPath, color = Color(0xFF1E293B))
-
-        // 6. Beard (dark slate)
-        val beardPath = Path().apply {
-            moveTo(w * 0.3f, h * 0.48f)
-            quadraticTo(w * 0.32f, h * 0.68f, w * 0.5f, h * 0.72f) // chin
-            quadraticTo(w * 0.68f, h * 0.68f, w * 0.7f, h * 0.48f)
-            lineTo(w * 0.63f, h * 0.49f)
-            quadraticTo(w * 0.60f, h * 0.62f, w * 0.5f, h * 0.64f)
-            quadraticTo(w * 0.40f, h * 0.62f, w * 0.37f, h * 0.49f)
-            close()
-        }
-        drawPath(path = beardPath, color = Color(0xFF1E293B))
-
-        // Mustache (dark slate)
-        val mustachePath = Path().apply {
-            moveTo(w * 0.38f, h * 0.56f)
-            quadraticTo(w * 0.45f, h * 0.53f, w * 0.5f, h * 0.56f)
-            quadraticTo(w * 0.55f, h * 0.53f, w * 0.62f, h * 0.56f)
-            quadraticTo(w * 0.5f, h * 0.61f, w * 0.38f, h * 0.56f)
-            close()
-        }
-        drawPath(path = mustachePath, color = Color(0xFF1E293B))
-
-        // 7. Eyes (black dots)
+        // 3. Head (neutral white circle)
         drawCircle(
-            color = Color(0xFF1E293B),
-            radius = w * 0.025f,
-            center = Offset(w * 0.44f, h * 0.46f)
-        )
-        drawCircle(
-            color = Color(0xFF1E293B),
-            radius = w * 0.025f,
-            center = Offset(w * 0.56f, h * 0.46f)
-        )
-
-        // Eyebrows (strokes)
-        val leftEyebrow = Path().apply {
-            moveTo(w * 0.4f, h * 0.41f)
-            quadraticTo(w * 0.44f, h * 0.39f, w * 0.48f, h * 0.41f)
-        }
-        drawPath(
-            path = leftEyebrow,
-            color = Color(0xFF1E293B),
-            style = Stroke(width = w * 0.018f)
-        )
-
-        val rightEyebrow = Path().apply {
-            moveTo(w * 0.52f, h * 0.41f)
-            quadraticTo(w * 0.56f, h * 0.39f, w * 0.6f, h * 0.41f)
-        }
-        drawPath(
-            path = rightEyebrow,
-            color = Color(0xFF1E293B),
-            style = Stroke(width = w * 0.018f)
-        )
-
-        // Mouth / Smile
-        val smilePath = Path().apply {
-            moveTo(w * 0.47f, h * 0.62f)
-            quadraticTo(w * 0.5f, h * 0.64f, w * 0.53f, h * 0.62f)
-        }
-        drawPath(
-            path = smilePath,
-            color = Color(0xFF1E293B),
-            style = Stroke(width = w * 0.012f)
+            color = Color.White.copy(alpha = 0.9f),
+            radius = w * 0.2f,
+            center = Offset(w / 2f, h * 0.42f)
         )
 
         drawContext.canvas.restore()

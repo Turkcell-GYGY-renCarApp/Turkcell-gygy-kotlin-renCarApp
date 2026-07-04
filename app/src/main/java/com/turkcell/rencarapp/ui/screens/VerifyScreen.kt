@@ -104,10 +104,19 @@ fun VerifyScreenContent(
 
     // Format phone number to "+90 532 000 00 00" structure
     val formattedPhone = remember(phoneNumber) {
-        if (phoneNumber.length == 10) {
-            "+90 ${phoneNumber.substring(0, 3)} ${phoneNumber.substring(3, 6)} ${phoneNumber.substring(6, 8)} ${phoneNumber.substring(8, 10)}"
+        val cleanNumber = phoneNumber
+            .removePrefix("+90")
+            .removePrefix("90")
+            .filter { it.isDigit() }
+            
+        if (cleanNumber.length == 10) {
+            "+90 ${cleanNumber.substring(0, 3)} ${cleanNumber.substring(3, 6)} ${cleanNumber.substring(6, 8)} ${cleanNumber.substring(8, 10)}"
         } else {
-            "+90 $phoneNumber"
+            if (phoneNumber.startsWith("+")) {
+                phoneNumber
+            } else {
+                "+$phoneNumber"
+            }
         }
     }
 
@@ -142,23 +151,21 @@ fun VerifyScreenContent(
             ) {
                 IconButton(
                     onClick = onBackClick,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    ),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .border(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         )
-                        .clip(RoundedCornerShape(12.dp))
                 ) {
                     Icon(
                         imageVector = RencarIcons.ArrowBack,
                         contentDescription = "Geri Dön",
-                        modifier = Modifier.size(20.dp)
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
