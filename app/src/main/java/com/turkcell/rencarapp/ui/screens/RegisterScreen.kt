@@ -307,6 +307,32 @@ fun RegisterScreenContent(
                     )
                 )
 
+                Spacer(modifier = Modifier.height(spacing.md))
+
+                // Referans Kodu Input
+                Text(
+                    text = "Referans Kodu (Opsiyonel)",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = spacing.xs)
+                )
+                OutlinedTextField(
+                    value = state.referralCode,
+                    onValueChange = { onIntent(RegisterIntent.ReferralCodeChanged(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("REN-K7M2XQ") },
+                    shape = MaterialTheme.shapes.small,
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                    )
+                )
+
                 Spacer(modifier = Modifier.height(spacing.xxl))
 
                 // Kayıt Ol Butonu

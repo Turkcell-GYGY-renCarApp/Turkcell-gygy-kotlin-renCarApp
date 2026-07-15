@@ -1,6 +1,11 @@
 package com.turkcell.rencarapp.ui.screens
 
+import android.widget.Toast
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,7 +27,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -27,15 +38,58 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.turkcell.rencarapp.ui.icons.RencarIcons
 import com.turkcell.rencarapp.ui.theme.LocalRencarSpacing
 import com.turkcell.rencarapp.ui.theme.LocalRencarColors
 import com.turkcell.rencarapp.ui.theme.RencarTheme
+import com.turkcell.rencarapp.ui.viewmodel.LicenseViewModel
+import com.turkcell.rencarapp.ui.contract.LicenseIntent
+import com.turkcell.rencarapp.ui.contract.LicenseEffect
+import com.turkcell.rencarapp.ui.contract.LicenseState
 
 @Composable
 fun SelfieVerificationScreen(
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LicenseViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is LicenseEffect.NavigateToDashboard -> {
+                    Toast.makeText(context, "Ehliyet ve selfie başarıyla yüklendi", Toast.LENGTH_SHORT).show()
+                    onContinueClick()
+                }
+                else -> {}
+            }
+        }
+    }
+
+    LaunchedEffect(state.uploadError) {
+        state.uploadError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.onIntent(LicenseIntent.ClearError)
+        }
+    }
+
+    SelfieVerificationScreenContent(
+        state = state,
+        onIntent = { viewModel.onIntent(it) },
+        onBackClick = onBackClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun SelfieVerificationScreenContent(
+    state: LicenseState,
+    onIntent: (LicenseIntent) -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
@@ -44,6 +98,14 @@ fun SelfieVerificationScreen(
 
     // Information box description with bold warnings
     val infoText = rememberInfoText()
+
+    val selfieLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            onIntent(LicenseIntent.SelfieImageChanged(uri))
+        }
+    }
 
     Box(
         modifier = modifier
@@ -189,8 +251,6 @@ fun SelfieVerificationScreen(
 
             Spacer(modifier = Modifier.height(spacing.xl))
 
-
-
             // Section 2: Selfie çekimi
             Text(
                 text = "Selfie çekimi",
@@ -206,7 +266,7 @@ fun SelfieVerificationScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
+                    .height(180.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(
                         if (isDark) Color(0xFF111827).copy(alpha = 0.3f) else Color(0xFFF9FAFB).copy(alpha = 0.5f)
@@ -223,32 +283,41 @@ fun SelfieVerificationScreen(
                             cornerRadius = CornerRadius(16.dp.toPx())
                         )
                     }
-                    .clickable { /* Selfie capture Trigger */ }
+                    .clickable { selfieLauncher.launch("image/*") }
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
+                if (state.selfieBitmap != null) {
+                    Image(
+                        bitmap = state.selfieBitmap.asImageBitmap(),
+                        contentDescription = "Selfie önizleme",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = RencarIcons.Camera,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Icon(
+                                imageVector = RencarIcons.Camera,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(spacing.xs))
+                        Text(
+                            text = "Fotoğrafını çek veya yükle",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Spacer(modifier = Modifier.height(spacing.xs))
-                    Text(
-                        text = "Fotoğrafını çek veya yükle",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
@@ -285,9 +354,10 @@ fun SelfieVerificationScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // CTA Button: "Devam Et"
+            // CTA Button: "Gönder ve Tamamla"
             Button(
-                onClick = onContinueClick,
+                onClick = { onIntent(LicenseIntent.UploadLicense) },
+                enabled = !state.isUploading && state.selfieBitmap != null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -304,10 +374,18 @@ fun SelfieVerificationScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text(
-                    text = "Devam Et",
-                    style = MaterialTheme.typography.labelLarge
-                )
+                if (state.isUploading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.5.dp
+                    )
+                } else {
+                    Text(
+                        text = "Gönder ve Tamamla",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(spacing.md))
@@ -334,9 +412,10 @@ private fun rememberInfoText() = remember {
 @Composable
 fun SelfieVerificationScreenLightPreview() {
     RencarTheme(darkTheme = false) {
-        SelfieVerificationScreen(
-            onBackClick = {},
-            onContinueClick = {}
+        SelfieVerificationScreenContent(
+            state = LicenseState(),
+            onIntent = {},
+            onBackClick = {}
         )
     }
 }
@@ -345,9 +424,10 @@ fun SelfieVerificationScreenLightPreview() {
 @Composable
 fun SelfieVerificationScreenDarkPreview() {
     RencarTheme(darkTheme = true) {
-        SelfieVerificationScreen(
-            onBackClick = {},
-            onContinueClick = {}
+        SelfieVerificationScreenContent(
+            state = LicenseState(),
+            onIntent = {},
+            onBackClick = {}
         )
     }
 }

@@ -40,6 +40,9 @@ class RegisterViewModel @Inject constructor(
             is RegisterIntent.PasswordChanged -> {
                 _state.value = _state.value.copy(password = intent.value)
             }
+            is RegisterIntent.ReferralCodeChanged -> {
+                _state.value = _state.value.copy(referralCode = intent.value)
+            }
             is RegisterIntent.TogglePasswordVisibility -> {
                 _state.value = _state.value.copy(passwordVisible = !_state.value.passwordVisible)
             }
@@ -63,7 +66,14 @@ class RegisterViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
                 val formattedPhone = formatPhone(s.phoneNumber)
-                val response = authRepository.register(s.email, s.password, s.fullName, formattedPhone)
+                val referralCodeParam = s.referralCode.takeIf { it.isNotBlank() }
+                val response = authRepository.register(
+                    email = s.email,
+                    password = s.password,
+                    fullName = s.fullName,
+                    phone = formattedPhone,
+                    referralCode = referralCodeParam
+                )
                 if (response.isSuccessful && response.body() != null) {
                     val authBody = response.body()!!
                     authRepository.saveAuthData(

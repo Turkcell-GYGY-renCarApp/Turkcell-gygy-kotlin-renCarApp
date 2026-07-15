@@ -17,6 +17,7 @@ data class LicenseResponse(
     val status: String,
     val frontImageUrl: String,
     val backImageUrl: String,
+    val selfieImageUrl: String? = null,
     val rejectReason: String? = null,
     val reviewedAt: String? = null,
     val createdAt: String,

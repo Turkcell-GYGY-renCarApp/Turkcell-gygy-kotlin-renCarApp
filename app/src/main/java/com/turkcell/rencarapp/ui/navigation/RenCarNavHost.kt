@@ -17,6 +17,7 @@ import com.turkcell.rencarapp.ui.screens.RegisterScreen
 import com.turkcell.rencarapp.ui.screens.MainDashboardScreen
 import com.turkcell.rencarapp.ui.screens.SelfieVerificationScreen
 import com.turkcell.rencarapp.ui.viewmodel.AuthViewModel
+import com.turkcell.rencarapp.ui.viewmodel.LicenseViewModel
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
@@ -39,6 +40,7 @@ fun RenCarNavHost(
 ) {
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState = authViewModel.authState.collectAsState().value
+    val licenseViewModel: LicenseViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
@@ -122,7 +124,8 @@ fun RenCarNavHost(
                 onBackClick = { navController.popBackStack() },
                 onContinueClick = {
                     navController.navigate(Screen.SelfieVerification.route)
-                }
+                },
+                viewModel = licenseViewModel
             )
         }
         composable(Screen.SelfieVerification.route) {
@@ -132,7 +135,8 @@ fun RenCarNavHost(
                     navController.navigate(Screen.MainDashboard.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
-                }
+                },
+                viewModel = licenseViewModel
             )
         }
     }

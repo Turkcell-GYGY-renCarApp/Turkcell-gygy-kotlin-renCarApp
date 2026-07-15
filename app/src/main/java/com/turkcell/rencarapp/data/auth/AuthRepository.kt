@@ -15,7 +15,8 @@ interface AuthRepository {
         email: String,
         password: String,
         fullName: String,
-        phone: String
+        phone: String,
+        referralCode: String? = null
     ): Response<AuthResponse>
 
     suspend fun login(

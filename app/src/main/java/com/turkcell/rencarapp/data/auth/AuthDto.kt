@@ -8,7 +8,8 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val fullName: String,
-    val phone: String
+    val phone: String,
+    val referralCode: String? = null
 )
 
 @Serializable
@@ -43,6 +44,7 @@ data class UserDto(
     val phone: String?,
     val fullName: String,
     val role: String,
+    val referralCode: String? = null,
     val createdAt: String,
     val updatedAt: String
 )

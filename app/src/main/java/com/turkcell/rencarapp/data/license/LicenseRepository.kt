@@ -10,7 +10,10 @@ interface LicenseRepository {
         frontMimeType: String,
         backBytes: ByteArray,
         backFileName: String,
-        backMimeType: String
+        backMimeType: String,
+        selfieBytes: ByteArray,
+        selfieFileName: String,
+        selfieMimeType: String
     ): Response<LicenseResponse>
 
     suspend fun getLicenseStatus(): Response<LicenseStatusResponse>

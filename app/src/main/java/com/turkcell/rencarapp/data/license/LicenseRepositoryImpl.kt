@@ -18,7 +18,10 @@ class LicenseRepositoryImpl @Inject constructor(
         frontMimeType: String,
         backBytes: ByteArray,
         backFileName: String,
-        backMimeType: String
+        backMimeType: String,
+        selfieBytes: ByteArray,
+        selfieFileName: String,
+        selfieMimeType: String
     ): Response<LicenseResponse> {
         val frontRequestBody = frontBytes.toRequestBody(frontMimeType.toMediaTypeOrNull(), 0, frontBytes.size)
         val frontPart = MultipartBody.Part.createFormData("front", frontFileName, frontRequestBody)
@@ -26,7 +29,10 @@ class LicenseRepositoryImpl @Inject constructor(
         val backRequestBody = backBytes.toRequestBody(backMimeType.toMediaTypeOrNull(), 0, backBytes.size)
         val backPart = MultipartBody.Part.createFormData("back", backFileName, backRequestBody)
 
-        return licenseApi.uploadLicense(frontPart, backPart)
+        val selfieRequestBody = selfieBytes.toRequestBody(selfieMimeType.toMediaTypeOrNull(), 0, selfieBytes.size)
+        val selfiePart = MultipartBody.Part.createFormData("selfie", selfieFileName, selfieRequestBody)
+
+        return licenseApi.uploadLicense(frontPart, backPart, selfiePart)
     }
 
     override suspend fun getLicenseStatus(): Response<LicenseStatusResponse> {

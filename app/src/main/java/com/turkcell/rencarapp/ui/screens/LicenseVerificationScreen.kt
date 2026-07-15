@@ -59,14 +59,6 @@ fun LicenseVerificationScreen(
 
     LaunchedEffect(Unit) {
         viewModel.onIntent(LicenseIntent.GetStatus)
-        viewModel.effect.collect { effect ->
-            when (effect) {
-                is LicenseEffect.NavigateToSelfie -> {
-                    Toast.makeText(context, "Ehliyet başarıyla yüklendi", Toast.LENGTH_SHORT).show()
-                    onContinueClick()
-                }
-            }
-        }
     }
 
     LaunchedEffect(state.statusError) {
@@ -301,8 +293,8 @@ fun LicenseVerificationScreenContent(
                         backBitmap = state.backBitmap,
                         onFrontClick = { frontLauncher.launch("image/*") },
                         onBackClick = { backLauncher.launch("image/*") },
-                        onUploadClick = { onIntent(LicenseIntent.UploadLicense) },
-                        isLoading = state.isUploading
+                        onUploadClick = onContinueClick,
+                        isLoading = false
                     )
                 }
             }
@@ -629,7 +621,7 @@ fun UploadFlowContent(
                 )
             } else {
                 Text(
-                    text = "Gönder ve Devam Et",
+                    text = "Devam Et",
                     style = MaterialTheme.typography.labelLarge
                 )
             }

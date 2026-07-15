@@ -51,6 +51,13 @@ class LicenseViewModel @Inject constructor(
                     backBitmap = bitmap
                 )
             }
+            is LicenseIntent.SelfieImageChanged -> {
+                val bitmap = decodeUriToBitmap(intent.uri)
+                _state.value = _state.value.copy(
+                    selfieImageUri = intent.uri,
+                    selfieBitmap = bitmap
+                )
+            }
             is LicenseIntent.UploadLicense -> {
                 uploadLicense()
             }
@@ -92,9 +99,10 @@ class LicenseViewModel @Inject constructor(
     private fun uploadLicense() {
         val frontUri = _state.value.frontImageUri
         val backUri = _state.value.backImageUri
+        val selfieUri = _state.value.selfieImageUri
 
-        if (frontUri == null || backUri == null) {
-            _state.value = _state.value.copy(uploadError = "Lütfen hem ön hem de arka yüz fotoğraflarını seçin")
+        if (frontUri == null || backUri == null || selfieUri == null) {
+            _state.value = _state.value.copy(uploadError = "Lütfen tüm fotoğrafları (ön, arka, selfie) seçin")
             return
         }
 
@@ -103,14 +111,16 @@ class LicenseViewModel @Inject constructor(
             try {
                 val frontBytes = getBytesFromUri(frontUri)
                 val backBytes = getBytesFromUri(backUri)
+                val selfieBytes = getBytesFromUri(selfieUri)
 
-                if (frontBytes == null || backBytes == null) {
+                if (frontBytes == null || backBytes == null || selfieBytes == null) {
                     _state.value = _state.value.copy(isUploading = false, uploadError = "Dosyalar okunurken bir hata oluştu")
                     return@launch
                 }
 
                 val frontMimeType = context.contentResolver.getType(frontUri) ?: "image/jpeg"
                 val backMimeType = context.contentResolver.getType(backUri) ?: "image/jpeg"
+                val selfieMimeType = context.contentResolver.getType(selfieUri) ?: "image/jpeg"
 
                 val response = licenseRepository.uploadLicense(
                     frontBytes = frontBytes,
@@ -118,7 +128,10 @@ class LicenseViewModel @Inject constructor(
                     frontMimeType = frontMimeType,
                     backBytes = backBytes,
                     backFileName = "back.jpg",
-                    backMimeType = backMimeType
+                    backMimeType = backMimeType,
+                    selfieBytes = selfieBytes,
+                    selfieFileName = "selfie.jpg",
+                    selfieMimeType = selfieMimeType
                 )
 
                 if (response.isSuccessful && response.body() != null) {
@@ -126,7 +139,7 @@ class LicenseViewModel @Inject constructor(
                         isUploading = false,
                         uploadSuccess = true
                     )
-                    _effect.send(LicenseEffect.NavigateToSelfie)
+                    _effect.send(LicenseEffect.NavigateToDashboard)
                     getLicenseStatus() // Refresh status
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Ehliyet yüklenemedi"

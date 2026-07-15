@@ -9,6 +9,7 @@ data class RegisterState(
     val phoneNumber: String = "",
     val password: String = "",
     val passwordVisible: Boolean = false,
+    val referralCode: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSuccess: Boolean = false
@@ -19,6 +20,7 @@ sealed interface RegisterIntent {
     data class EmailChanged(val value: String) : RegisterIntent
     data class PhoneChanged(val value: String) : RegisterIntent
     data class PasswordChanged(val value: String) : RegisterIntent
+    data class ReferralCodeChanged(val value: String) : RegisterIntent
     object TogglePasswordVisibility : RegisterIntent
     object Register : RegisterIntent
     object ClearError : RegisterIntent

@@ -22,9 +22,10 @@ class AuthRepositoryImpl @Inject constructor(
         email: String,
         password: String,
         fullName: String,
-        phone: String
+        phone: String,
+        referralCode: String?
     ): Response<AuthResponse> {
-        return authApi.register(RegisterRequest(email, password, fullName, phone))
+        return authApi.register(RegisterRequest(email, password, fullName, phone, referralCode))
     }
 
     override suspend fun login(phone: String): Response<OtpResponse> {
