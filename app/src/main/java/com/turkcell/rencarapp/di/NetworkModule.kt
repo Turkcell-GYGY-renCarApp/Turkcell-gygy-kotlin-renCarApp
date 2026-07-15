@@ -2,6 +2,7 @@ package com.turkcell.rencarapp.di
 
 import com.turkcell.rencarapp.data.auth.AuthApi
 import com.turkcell.rencarapp.data.remote.AuthInterceptor
+import com.turkcell.rencarapp.data.vehicle.VehicleApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,5 +69,11 @@ object NetworkModule {
     @Singleton
     fun provideLicenseApi(retrofit: Retrofit): com.turkcell.rencarapp.data.license.LicenseApi {
         return retrofit.create(com.turkcell.rencarapp.data.license.LicenseApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideVehicleApi(retrofit: Retrofit): VehicleApi {
+        return retrofit.create(VehicleApi::class.java)
     }
 }

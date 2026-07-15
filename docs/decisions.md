@@ -119,3 +119,28 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * LoginViewModel.kt, RegisterViewModel.kt, VerifyViewModel.kt, LicenseViewModel.kt
     * LoginScreen.kt, RegisterScreen.kt, VerifyScreen.kt, LicenseVerificationScreen.kt
     * RenCarNavHost.kt
+
+## 10. Harita ve Konum Servisi Entegrasyonu
+
+* **Karar:** Uygulamaya MapLibre Native Android Maps SDK (`org.maplibre.gl:android-sdk`) ve ilişkili annotation kütüphanesi (`org.maplibre.gl:android-plugin-annotation-v9`) ile Google Play Services Location (`com.google.android.gms:play-services-location`) entegre edilmiştir. Harita, sistem temasından bağımsız olarak her zaman varsayılan OpenStreetMap (açık tema) stilinde kalacak şekilde yapılandırılmıştır.
+  * **Gerekçe:** Yakındaki kiralık araçları harita üzerinde dinamik fiyat etiketleriyle göstermek, kullanıcının mevcut konumunu takip etmek ve harita katmanında tutarlı bir görsel deneyim sunmak.
+  * **İlgili Dosyalar:**
+    * libs.versions.toml
+    * build.gradle.kts (app)
+    * AndroidManifest.xml
+    * RencarMap.kt
+    * MainDashboardScreen.kt
+
+## 11. Müsait Araçların REST API Entegrasyonu ve Haritada Gösterilmesi
+
+* **Karar:** Haritadaki araç konumları ve fiyat bilgileri, REST API `/vehicles` endpoint'i üzerinden dinamik olarak sorgulanacak şekilde entegre edilmiştir. `includeBusy = "true"` parametresi kullanılarak rezerve veya kiralanmış (meşgul) durumdaki araçlar da çekilmekte, bu araçlar haritada gri renkli etiketlerle ayırt edilmektedir. Segment filtre çiplerine (Ekonomik, Konfor, SUV) tıklandığında ViewModel üzerinden API'ye filtre parametresi gönderilmektedir.
+  * **Gerekçe:** Kullanıcıya gerçek zamanlı araç müsaitliği, konum ve fiyat bilgilerini sunmak; segment bazlı filtrelerin backend tarafında çalışmasını sağlamak.
+  * **İlgili Dosyalar:**
+    * VehicleDto.kt
+    * VehicleApi.kt
+    * VehicleRepository.kt
+    * VehicleRepositoryImpl.kt
+    * VehicleViewModel.kt
+    * NetworkModule.kt
+    * AuthModule.kt
+    * MainDashboardScreen.kt
