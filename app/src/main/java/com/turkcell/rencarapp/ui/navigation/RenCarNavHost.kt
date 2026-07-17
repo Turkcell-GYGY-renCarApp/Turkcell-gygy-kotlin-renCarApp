@@ -29,6 +29,9 @@ sealed class Screen(val route: String) {
     object LicenseVerification : Screen("license_verification")
     object SelfieVerification : Screen("selfie_verification")
     object MainDashboard : Screen("main_dashboard")
+    object PaymentSummary : Screen("payment_summary/{rentalId}") {
+        fun createRoute(rentalId: String) = "payment_summary/$rentalId"
+    }
 }
 
 @Composable
@@ -137,6 +140,20 @@ fun RenCarNavHost(
                     }
                 },
                 viewModel = licenseViewModel
+            )
+        }
+        composable(
+            route = Screen.PaymentSummary.route,
+            arguments = listOf(navArgument("rentalId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val rentalId = backStackEntry.arguments?.getString("rentalId") ?: ""
+            com.turkcell.rencarapp.ui.screens.PaymentSummaryScreen(
+                rentalId = rentalId,
+                onPaymentSuccess = {
+                    navController.navigate(Screen.MainDashboard.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
+                }
             )
         }
     }

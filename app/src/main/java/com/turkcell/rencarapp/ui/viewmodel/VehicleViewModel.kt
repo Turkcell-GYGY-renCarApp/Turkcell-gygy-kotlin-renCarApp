@@ -38,12 +38,12 @@ class VehicleViewModel @Inject constructor(
             }.onFailure { exception ->
                 Log.e("VehicleViewModel", "Error fetching vehicles: ${exception.message}", exception)
                 _error.value = exception.message ?: "Araçlar yüklenirken bir hata oluştu"
-                
+                /*
                 // Kullanıcı rolü PENDING olduğu için 403 alınması veya servis kesintisi durumlarında
                 // kullanıcı deneyimini bozmamak adına haritayı mockup dummy araçlarla besliyoruz.
                 val fallbackList = getDummyVehiclesForSegment(segment)
                 Log.d("VehicleViewModel", "Falling back to ${fallbackList.size} dummy vehicles")
-                _vehicles.value = fallbackList
+                _vehicles.value = fallbackList */
             }
             _isLoading.value = false
         }

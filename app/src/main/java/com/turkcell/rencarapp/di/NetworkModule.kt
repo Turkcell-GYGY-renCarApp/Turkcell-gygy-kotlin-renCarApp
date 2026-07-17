@@ -76,4 +76,22 @@ object NetworkModule {
     fun provideVehicleApi(retrofit: Retrofit): VehicleApi {
         return retrofit.create(VehicleApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideRentalApi(retrofit: Retrofit): com.turkcell.rencarapp.data.rental.RentalApi {
+        return retrofit.create(com.turkcell.rencarapp.data.rental.RentalApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCardApi(retrofit: Retrofit): com.turkcell.rencarapp.data.card.CardApi {
+        return retrofit.create(com.turkcell.rencarapp.data.card.CardApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWalletApi(retrofit: Retrofit): com.turkcell.rencarapp.data.wallet.WalletApi {
+        return retrofit.create(com.turkcell.rencarapp.data.wallet.WalletApi::class.java)
+    }
 }

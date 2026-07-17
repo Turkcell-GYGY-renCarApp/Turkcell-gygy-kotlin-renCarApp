@@ -84,6 +84,7 @@ fun MainDashboardScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             RencarBottomNavigationBar(
                 currentTab = currentTab,
@@ -98,8 +99,11 @@ fun MainDashboardScreen(
         ) {
             when (currentTab) {
                 DashboardTab.Map -> MapTabContent()
-                DashboardTab.History -> PlaceholderTabContent("Geçmiş Yolculuklarım", "Tamamlanmış veya iptal edilmiş sürüş geçmişinizi burada görebilirsiniz.")
-                DashboardTab.Wallet -> PlaceholderTabContent("Cüzdanım", "Kayıtlı kartlarınızı, bakiye bilgilerinizi ve ödeme geçmişinizi yönetin.")
+                DashboardTab.History -> PaymentSummaryScreen(
+                    rentalId = "clx0rent1234567890",
+                    onPaymentSuccess = { currentTab = DashboardTab.Map }
+                )
+                DashboardTab.Wallet -> WalletScreen()
                 DashboardTab.Profile -> ProfileScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeToggle = onThemeToggle,

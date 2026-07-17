@@ -31,4 +31,22 @@ abstract class AuthModule {
     abstract fun bindVehicleRepository(
         vehicleRepositoryImpl: VehicleRepositoryImpl
     ): VehicleRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRentalRepository(
+        rentalRepositoryImpl: com.turkcell.rencarapp.data.rental.RentalRepositoryImpl
+    ): com.turkcell.rencarapp.data.rental.RentalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCardRepository(
+        cardRepositoryImpl: com.turkcell.rencarapp.data.card.CardRepositoryImpl
+    ): com.turkcell.rencarapp.data.card.CardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWalletRepository(
+        walletRepositoryImpl: com.turkcell.rencarapp.data.wallet.WalletRepositoryImpl
+    ): com.turkcell.rencarapp.data.wallet.WalletRepository
 }
