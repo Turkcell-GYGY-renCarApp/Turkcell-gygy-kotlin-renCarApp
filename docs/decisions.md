@@ -173,3 +173,14 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * ReservationContract.kt, ReservationViewModel.kt
     * VehiclePhotoUploadScreen.kt, ReservationApprovalScreen.kt
     * RenCarNavHost.kt, MainDashboardScreen.kt
+
+## 15. Canlı Konum Takibi ve Aktif Kiralama Akışı
+
+* **Karar:** Aktif kiralama aşamasında olan kullanıcıların araç konumunu gerçek zamanlı olarak izleyebilmesi için Socket.IO tabanlı `RideLocationClient` entegre edilmiştir. Canlı konum verileri `/ws/locations` adresi üzerinden `my-vehicle` event'i ile dinlenecektir. Kiralama durumu her saniye güncellenen geçen süre, mesafe ve maliyet bilgileriyle `ActiveRentalScreen` üzerinde gösterilecektir.
+  * **Gerekçe:** Kullanıcılara kiralama boyunca şeffaf ve canlı bir sürüş takibi sunmak, WebSocket bağlantısını güvenli oturum tazeleme (`refreshSession`) mekanizmasıyla yönetmek.
+  * **İlgili Dosyalar:**
+    * RideLocationClient.kt
+    * ActiveRentalScreen.kt
+    * ActiveRentalViewModel.kt
+    * ActiveRentalContract.kt
+    * RentalRepository.kt, RentalRepositoryImpl.kt

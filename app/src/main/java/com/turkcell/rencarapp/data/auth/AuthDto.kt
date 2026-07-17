@@ -53,3 +53,8 @@ data class UserDto(
 data class LogoutResponse(
     val message: String
 )
+
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String
+)

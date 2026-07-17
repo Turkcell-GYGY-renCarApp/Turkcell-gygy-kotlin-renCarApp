@@ -68,11 +68,25 @@ fun MainDashboardScreen(
     onLogoutClick: () -> Unit,
     onLicenseClick: () -> Unit,
     onReserveClick: (String) -> Unit = {},
+    onActiveRentalFound: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentTab by remember { mutableStateOf(DashboardTab.Map) }
     val authViewModel: AuthViewModel = hiltViewModel()
     val licenseViewModel: LicenseViewModel = hiltViewModel()
+    val activeRentalViewModel: com.turkcell.rencarapp.ui.viewmodel.ActiveRentalViewModel = hiltViewModel()
+    val activeRentalState by activeRentalViewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        activeRentalViewModel.checkActiveRental()
+    }
+
+    LaunchedEffect(activeRentalState.rentalId) {
+        val rId = activeRentalState.rentalId
+        if (rId.isNotBlank()) {
+            onActiveRentalFound(rId)
+        }
+    }
 
     LaunchedEffect(currentTab) {
         if (currentTab == DashboardTab.Profile) {

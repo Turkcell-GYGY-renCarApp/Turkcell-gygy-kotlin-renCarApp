@@ -19,6 +19,7 @@ import com.turkcell.rencarapp.ui.screens.MainDashboardScreen
 import com.turkcell.rencarapp.ui.screens.SelfieVerificationScreen
 import com.turkcell.rencarapp.ui.screens.VehiclePhotoUploadScreen
 import com.turkcell.rencarapp.ui.screens.ReservationApprovalScreen
+import com.turkcell.rencarapp.ui.screens.ActiveRentalScreen
 import com.turkcell.rencarapp.ui.viewmodel.AuthViewModel
 import com.turkcell.rencarapp.ui.viewmodel.LicenseViewModel
 import com.turkcell.rencarapp.ui.viewmodel.ReservationViewModel
@@ -41,6 +42,9 @@ sealed class Screen(val route: String) {
     }
     object PaymentSummary : Screen("payment_summary/{rentalId}") {
         fun createRoute(rentalId: String) = "payment_summary/$rentalId"
+    }
+    object ActiveRental : Screen("active_rental/{rentalId}") {
+        fun createRoute(rentalId: String) = "active_rental/$rentalId"
     }
 }
 
@@ -132,6 +136,11 @@ fun RenCarNavHost(
                 },
                 onReserveClick = { vehicleId ->
                     navController.navigate(Screen.VehiclePhotoUpload.createRoute(vehicleId))
+                },
+                onActiveRentalFound = { rentalId ->
+                    navController.navigate(Screen.ActiveRental.createRoute(rentalId)) {
+                        popUpTo(Screen.MainDashboard.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -203,6 +212,20 @@ fun RenCarNavHost(
                 onPaymentSuccess = {
                     navController.navigate(Screen.MainDashboard.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(
+            route = Screen.ActiveRental.route,
+            arguments = listOf(navArgument("rentalId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val rentalId = backStackEntry.arguments?.getString("rentalId") ?: ""
+            ActiveRentalScreen(
+                rentalId = rentalId,
+                onEndSuccess = { rId ->
+                    navController.navigate(Screen.PaymentSummary.createRoute(rId)) {
+                        popUpTo(Screen.MainDashboard.route) { inclusive = true }
                     }
                 }
             )

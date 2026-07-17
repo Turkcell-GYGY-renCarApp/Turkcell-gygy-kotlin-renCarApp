@@ -27,4 +27,9 @@ interface AuthApi {
 
     @GET("auth/me")
     suspend fun getMe(): Response<UserDto>
+
+    @POST("auth/refresh")
+    suspend fun refresh(
+        @Body request: RefreshTokenRequest
+    ): Response<AuthResponse>
 }

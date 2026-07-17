@@ -6,6 +6,8 @@ import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import kotlinx.coroutines.flow.first
+
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
@@ -70,5 +72,23 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun updateRole(role: String) {
         authPreferencesRepository.updateRole(role)
+    }
+
+    override suspend fun refreshSession(): Response<AuthResponse> {
+        val currentRefresh = refreshToken.first() ?: throw Exception("Refresh token bulunamadı")
+        val response = authApi.refresh(RefreshTokenRequest(currentRefresh))
+        if (response.isSuccessful && response.body() != null) {
+            val authBody = response.body()!!
+            saveAuthData(
+                accessToken = authBody.accessToken,
+                refreshToken = authBody.refreshToken,
+                userId = authBody.user.id,
+                email = authBody.user.email,
+                phone = authBody.user.phone ?: "",
+                fullName = authBody.user.fullName,
+                role = authBody.user.role
+            )
+        }
+        return response
     }
 }

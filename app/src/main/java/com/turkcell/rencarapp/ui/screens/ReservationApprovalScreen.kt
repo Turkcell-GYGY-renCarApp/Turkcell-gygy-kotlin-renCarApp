@@ -49,7 +49,7 @@ fun ReservationApprovalScreen(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ReservationEffect.NavigateToSuccess -> {
-                    Toast.makeText(context, "Rezervasyon başarıyla oluşturuldu!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Kiralama başarıyla başlatıldı!", Toast.LENGTH_SHORT).show()
                     onReservationSuccess()
                 }
                 is ReservationEffect.ShowError -> {

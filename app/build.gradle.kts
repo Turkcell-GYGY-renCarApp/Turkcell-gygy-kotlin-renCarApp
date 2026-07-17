@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.maplibre)
     implementation(libs.maplibre.annotation)
     implementation(libs.play.services.location)
+    implementation(libs.socket.io.client)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

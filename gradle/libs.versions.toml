@@ -20,8 +20,10 @@ retrofitKotlinxSerializationConverter = "1.0.0"
 maplibre = "11.7.1"
 maplibreAnnotation = "3.0.2"
 playServicesLocation = "21.3.0"
+socketio = "2.1.0"
 
 [libraries]
+socket-io-client = { group = "io.socket", name = "socket.io-client", version.ref = "socketio" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

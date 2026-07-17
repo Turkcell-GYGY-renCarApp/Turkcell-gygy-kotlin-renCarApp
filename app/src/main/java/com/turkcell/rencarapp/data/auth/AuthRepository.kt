@@ -45,4 +45,6 @@ interface AuthRepository {
     suspend fun clearAuthData()
 
     suspend fun updateRole(role: String)
+
+    suspend fun refreshSession(): Response<AuthResponse>
 }
