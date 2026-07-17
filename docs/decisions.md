@@ -144,3 +144,10 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * NetworkModule.kt
     * AuthModule.kt
     * MainDashboardScreen.kt
+
+## 12. MapLibre SDK Sürümünün Güncellenmesi
+
+* **Karar:** Proje teslim gereksinimleri doğrultusunda MapLibre Native Android Maps SDK (`org.maplibre.gl:android-sdk`) sürümü `10.2.0`'dan `11.7.1`'e yükseltilmiştir.
+  * **Gerekçe:** Harita entegrasyonunun güncel SDK standartları ile uyumlu çalışmasını sağlamak.
+  * **İlgili Dosyalar:**
+    * libs.versions.toml
