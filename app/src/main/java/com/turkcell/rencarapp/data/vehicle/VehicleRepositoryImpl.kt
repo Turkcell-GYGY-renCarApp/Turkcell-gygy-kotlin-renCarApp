@@ -11,7 +11,16 @@ class VehicleRepositoryImpl @Inject constructor(
         includeBusy: String?
     ): Result<List<VehicleResponseDto>> {
         return try {
-            val response = vehicleApi.getVehicles(type = type, segment = segment, includeBusy = includeBusy)
+            val response = vehicleApi.getVehicles(type = type, segment = segment, includeBusy = includeBusy, limit = 100)
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getVehicle(id: String): Result<VehicleResponseDto> {
+        return try {
+            val response = vehicleApi.getVehicle(id)
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)

@@ -1,6 +1,7 @@
 package com.turkcell.rencarapp.data.vehicle
 
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface VehicleApi {
@@ -12,4 +13,9 @@ interface VehicleApi {
         @Query("limit") limit: Int? = null,
         @Query("includeBusy") includeBusy: String? = null
     ): List<VehicleResponseDto>
+
+    @GET("vehicles/{id}")
+    suspend fun getVehicle(
+        @Path("id") id: String
+    ): VehicleResponseDto
 }
