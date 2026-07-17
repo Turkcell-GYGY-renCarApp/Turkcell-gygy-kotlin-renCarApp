@@ -1,0 +1,28 @@
+package com.turkcell.rencarapp.di
+
+import com.turkcell.rencarapp.data.reservation.ReservationApi
+import com.turkcell.rencarapp.data.reservation.ReservationRepository
+import com.turkcell.rencarapp.data.reservation.ReservationRepositoryImpl
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object ReservationModule {
+
+    @Provides
+    @Singleton
+    fun provideReservationApi(retrofit: Retrofit): ReservationApi {
+        return retrofit.create(ReservationApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReservationRepository(impl: ReservationRepositoryImpl): ReservationRepository {
+        return impl
+    }
+}

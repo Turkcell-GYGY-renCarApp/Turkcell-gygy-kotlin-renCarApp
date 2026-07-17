@@ -163,3 +163,13 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * VehicleContract.kt
     * VehicleViewModel.kt
     * MainDashboardScreen.kt
+
+## 14. Rezervasyon Öncesi Fotoğraf Yükleme ve Rezervasyon Onay Akışı
+
+* **Karar:** Rezervasyon işlemi başlatılmadan önce aracı 4 yönden (Ön, Arka, Sol, Sağ) yerel olarak fotoğraflama zorunluluğu getiren `VehiclePhotoUploadScreen` ve plan seçimi içeren `ReservationApprovalScreen` sisteme entegre edilmiştir. Bu akışlar `ReservationViewModel` ve `ReservationContract` MVI yapısı altında toplanmış; "Rezervasyonunu Tamamla" adımında REST API `/reservations` (POST) API'si çağrılarak rezervasyon sunucuda tamamlanmıştır.
+  * **Gerekçe:** Kiralama öncesi araç hasar kontrolünü yerel olarak kayıt altına almak, kiralama planı seçimini ve sigorta koşulları onayını standartlaştırmak, rezervasyon talebini API üzerinden güvenle tetiklemek.
+  * **İlgili Dosyalar:**
+    * ReservationDto.kt, ReservationApi.kt, ReservationRepository.kt, ReservationRepositoryImpl.kt, ReservationModule.kt
+    * ReservationContract.kt, ReservationViewModel.kt
+    * VehiclePhotoUploadScreen.kt, ReservationApprovalScreen.kt
+    * RenCarNavHost.kt, MainDashboardScreen.kt

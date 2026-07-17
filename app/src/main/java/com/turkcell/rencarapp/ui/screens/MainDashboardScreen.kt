@@ -67,6 +67,7 @@ fun MainDashboardScreen(
     onThemeToggle: () -> Unit,
     onLogoutClick: () -> Unit,
     onLicenseClick: () -> Unit,
+    onReserveClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentTab by remember { mutableStateOf(DashboardTab.Map) }
@@ -103,7 +104,7 @@ fun MainDashboardScreen(
                 .padding(paddingValues)
         ) {
             when (currentTab) {
-                DashboardTab.Map -> MapTabContent()
+                DashboardTab.Map -> MapTabContent(onReserveClick = onReserveClick)
                 DashboardTab.History -> PaymentSummaryScreen(
                     rentalId = "clx0rent1234567890",
                     onPaymentSuccess = { currentTab = DashboardTab.Map }
@@ -129,7 +130,7 @@ fun MainDashboardScreen(
 
 
 @Composable
-fun MapTabContent() {
+fun MapTabContent(onReserveClick: (String) -> Unit) {
     val context = LocalContext.current
     val spacing = LocalRencarSpacing.current
     val density = LocalDensity.current
@@ -524,7 +525,9 @@ fun MapTabContent() {
                     VehicleDetailSheet(
                         vehicle = selectedVehicle,
                         myLocation = myLocation,
-                        onReserveClick = { /* Rezerve et */ },
+                        onReserveClick = {
+                            onReserveClick(selectedVehicle.id)
+                        },
                         onUnlockClick = { /* Kilidi aç */ }
                     )
                 }
