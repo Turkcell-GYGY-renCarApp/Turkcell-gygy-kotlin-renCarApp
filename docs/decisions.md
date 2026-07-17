@@ -150,4 +150,16 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
 * **Karar:** Proje teslim gereksinimleri doğrultusunda MapLibre Native Android Maps SDK (`org.maplibre.gl:android-sdk`) sürümü `10.2.0`'dan `11.7.1`'e yükseltilmiştir.
   * **Gerekçe:** Harita entegrasyonunun güncel SDK standartları ile uyumlu çalışmasını sağlamak.
   * **İlgili Dosyalar:**
-    * libs.versions.toml
+    * libs.versions.toml
+
+## 13. Araç Detay Ekranı Entegrasyonu ve MVI Dönüşümü
+
+* **Karar:** Haritadan seçilen araçların detayını ve "En Yakın Aracı Bul" akışını yönetmek üzere `VehicleViewModel` MVI mimari desenine dönüştürülmüştür. `VehicleContract.kt` oluşturulmuş; durum (`VehicleState`), eylemler (`VehicleIntent`) ve yan etkiler (`VehicleEffect`) bu kontrat üzerinden merkezileştirilmiştir. REST API `/vehicles/{id}` endpoint entegrasyonu tamamlanmış ve arayüzde zengin görselliğe sahip detay paneli (Bottom Sheet) tasarlanmıştır.
+  * **Gerekçe:** Araç durum yönetimini tek yönlü veri akışı (UDF) ile sürdürülebilir kılmak, harita üzerindeki etkileşimleri tek kaynaktan yönetmek ve API'den gelen verileri görsel tasarıma birebir aktarmak.
+  * **İlgili Dosyalar:**
+    * VehicleApi.kt
+    * VehicleRepository.kt
+    * VehicleRepositoryImpl.kt
+    * VehicleContract.kt
+    * VehicleViewModel.kt
+    * MainDashboardScreen.kt
