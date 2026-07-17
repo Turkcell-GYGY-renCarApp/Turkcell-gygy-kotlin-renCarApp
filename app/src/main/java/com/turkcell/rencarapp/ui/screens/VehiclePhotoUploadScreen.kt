@@ -1,6 +1,9 @@
 package com.turkcell.rencarapp.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
+import java.io.File
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -229,6 +232,7 @@ fun VehiclePhotoUploadScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoSlotCard(
     label: String,
@@ -239,12 +243,52 @@ fun PhotoSlotCard(
 ) {
     val spacing = LocalRencarSpacing.current
     val isCaptured = uri != null
+    val context = LocalContext.current
+
+    var showSourceSheet by remember { mutableStateOf(false) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
     
+    fun createImageUri(): Uri {
+        val directory = File(context.cacheDir, "camera_photos")
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = File(directory, "captured_photo_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+    }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { resultUri ->
         if (resultUri != null) {
             onPhotoSelected(resultUri)
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempUri?.let { uri ->
+                onPhotoSelected(uri)
+            }
+        }
+        showSourceSheet = false
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = createImageUri()
+            tempUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Kamera izni verilmedi. Fotoğraf çekmek için kameraya izin vermelisiniz.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -268,7 +312,7 @@ fun PhotoSlotCard(
                 },
                 shape = RoundedCornerShape(16.dp)
             )
-            .clickable { launcher.launch("image/*") }
+            .clickable { showSourceSheet = true }
     ) {
         if (isCaptured) {
             // Checked State
@@ -361,6 +405,89 @@ fun PhotoSlotCard(
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+
+        if (showSourceSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showSourceSheet = false },
+                sheetState = rememberModalBottomSheetState(),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        text = "$label Fotoğrafı",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.CAMERA
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (hasCameraPermission) {
+                                    val uri = createImageUri()
+                                    tempUri = uri
+                                    cameraLauncher.launch(uri)
+                                } else {
+                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                }
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Camera,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Kamerayı Aç ve Fotoğraf Çek",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                launcher.launch("image/*")
+                                showSourceSheet = false
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Upload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Galeriden Fotoğraf Seç",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
     }

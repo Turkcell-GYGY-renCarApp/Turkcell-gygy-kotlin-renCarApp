@@ -171,7 +171,29 @@ class LicenseViewModel @Inject constructor(
     private fun getBytesFromUri(uri: Uri): ByteArray? {
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                inputStream.readBytes()
+                val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+                
+                val maxDimension = 1200
+                val width = originalBitmap.width
+                val height = originalBitmap.height
+                val scaledBitmap = if (width > maxDimension || height > maxDimension) {
+                    val ratio = width.toFloat() / height.toFloat()
+                    val newWidth = if (ratio > 1) maxDimension else (maxDimension * ratio).toInt()
+                    val newHeight = if (ratio > 1) (maxDimension / ratio).toInt() else maxDimension
+                    Bitmap.createScaledBitmap(originalBitmap, newWidth, newHeight, true)
+                } else {
+                    originalBitmap
+                }
+                
+                val outputStream = java.io.ByteArrayOutputStream()
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                
+                if (scaledBitmap != originalBitmap) {
+                    scaledBitmap.recycle()
+                }
+                originalBitmap.recycle()
+                
+                outputStream.toByteArray()
             }
         } catch (e: Exception) {
             e.printStackTrace()

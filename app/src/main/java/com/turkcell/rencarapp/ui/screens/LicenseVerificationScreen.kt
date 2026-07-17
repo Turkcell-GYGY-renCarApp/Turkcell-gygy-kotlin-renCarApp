@@ -2,6 +2,9 @@ package com.turkcell.rencarapp.ui.screens
 
 import android.widget.Toast
 import android.graphics.Bitmap
+import android.net.Uri
+import java.io.File
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -84,6 +87,7 @@ fun LicenseVerificationScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicenseVerificationScreenContent(
     state: LicenseState,
@@ -94,6 +98,23 @@ fun LicenseVerificationScreenContent(
 ) {
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
     val spacing = LocalRencarSpacing.current
+    val context = LocalContext.current
+
+    var activePhotoSlot by remember { mutableStateOf<String?>(null) } // "front", "back", or null
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageUri(): Uri {
+        val directory = File(context.cacheDir, "camera_photos")
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = File(directory, "captured_photo_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+    }
 
     val frontLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -108,6 +129,33 @@ fun LicenseVerificationScreenContent(
     ) { uri ->
         if (uri != null) {
             onIntent(LicenseIntent.BackImageChanged(uri))
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempUri?.let { uri ->
+                if (activePhotoSlot == "front") {
+                    onIntent(LicenseIntent.FrontImageChanged(uri))
+                } else if (activePhotoSlot == "back") {
+                    onIntent(LicenseIntent.BackImageChanged(uri))
+                }
+            }
+        }
+        activePhotoSlot = null
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = createImageUri()
+            tempUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Kamera izni verilmedi. Fotoğraf çekmek için kameraya izin vermelisiniz.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -291,11 +339,98 @@ fun LicenseVerificationScreenContent(
                         rejectReason = state.statusResponse?.rejectReason,
                         frontBitmap = state.frontBitmap,
                         backBitmap = state.backBitmap,
-                        onFrontClick = { frontLauncher.launch("image/*") },
-                        onBackClick = { backLauncher.launch("image/*") },
+                        onFrontClick = { activePhotoSlot = "front" },
+                        onBackClick = { activePhotoSlot = "back" },
                         onUploadClick = onContinueClick,
                         isLoading = false
                     )
+                }
+            }
+        }
+
+        if (activePhotoSlot != null) {
+            ModalBottomSheet(
+                onDismissRequest = { activePhotoSlot = null },
+                sheetState = rememberModalBottomSheetState(),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        text = if (activePhotoSlot == "front") "Ehliyet Ön Yüzü" else "Ehliyet Arka Yüzü",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.CAMERA
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (hasCameraPermission) {
+                                    val uri = createImageUri()
+                                    tempUri = uri
+                                    cameraLauncher.launch(uri)
+                                } else {
+                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                }
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Camera,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Kamerayı Aç ve Fotoğraf Çek",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (activePhotoSlot == "front") {
+                                    frontLauncher.launch("image/*")
+                                } else {
+                                    backLauncher.launch("image/*")
+                                }
+                                activePhotoSlot = null
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Upload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Galeriden Fotoğraf Seç",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }

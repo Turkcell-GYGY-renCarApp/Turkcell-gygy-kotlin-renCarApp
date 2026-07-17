@@ -2,6 +2,9 @@ package com.turkcell.rencarapp.ui.screens
 
 import android.widget.Toast
 import android.graphics.Bitmap
+import android.net.Uri
+import java.io.File
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -18,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +90,7 @@ fun SelfieVerificationScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelfieVerificationScreenContent(
     state: LicenseState,
@@ -95,15 +101,55 @@ fun SelfieVerificationScreenContent(
     val isDark = MaterialTheme.colorScheme.background == Color(0xFF0D0D0D)
     val spacing = LocalRencarSpacing.current
     val extColors = LocalRencarColors.current
+    val context = LocalContext.current
 
     // Information box description with bold warnings
     val infoText = rememberInfoText()
+
+    var showSourceSheet by remember { mutableStateOf(false) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageUri(): Uri {
+        val directory = File(context.cacheDir, "camera_photos")
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = File(directory, "captured_photo_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+    }
 
     val selfieLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
             onIntent(LicenseIntent.SelfieImageChanged(uri))
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempUri?.let { uri ->
+                onIntent(LicenseIntent.SelfieImageChanged(uri))
+            }
+        }
+        showSourceSheet = false
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = createImageUri()
+            tempUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Kamera izni verilmedi. Fotoğraf çekmek için kameraya izin vermelisiniz.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -283,7 +329,7 @@ fun SelfieVerificationScreenContent(
                             cornerRadius = CornerRadius(16.dp.toPx())
                         )
                     }
-                    .clickable { selfieLauncher.launch("image/*") }
+                    .clickable { showSourceSheet = true }
             ) {
                 if (state.selfieBitmap != null) {
                     Image(
@@ -389,6 +435,89 @@ fun SelfieVerificationScreenContent(
             }
 
             Spacer(modifier = Modifier.height(spacing.md))
+        }
+
+        if (showSourceSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showSourceSheet = false },
+                sheetState = rememberModalBottomSheetState(),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    Text(
+                        text = "Selfie Fotoğrafı",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.CAMERA
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (hasCameraPermission) {
+                                    val uri = createImageUri()
+                                    tempUri = uri
+                                    cameraLauncher.launch(uri)
+                                } else {
+                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                }
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Camera,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Kamerayı Aç ve Fotoğraf Çek",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selfieLauncher.launch("image/*")
+                                showSourceSheet = false
+                            }
+                            .padding(vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Upload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Galeriden Fotoğraf Seç",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
         }
     }
 }
