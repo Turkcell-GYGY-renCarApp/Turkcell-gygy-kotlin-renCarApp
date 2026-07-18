@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.rencarapp.data.rental.RentalRepository
 import com.turkcell.rencarapp.data.rental.PayRentalDto
+import com.turkcell.rencarapp.data.rental.InitializeCheckoutFormDto
+import com.turkcell.rencarapp.data.rental.CheckoutFormInitializeResponseDto
 import com.turkcell.rencarapp.data.card.CardRepository
 import com.turkcell.rencarapp.data.wallet.WalletRepository
 import com.turkcell.rencarapp.ui.contract.PaymentEffect
@@ -66,6 +68,16 @@ class PaymentViewModel @Inject constructor(
                     cardsError = null,
                     paymentError = null,
                     walletError = null
+                )
+            }
+            is PaymentIntent.CompleteIyzicoPayment -> {
+                completeIyzicoPayment(intent.token)
+            }
+            is PaymentIntent.CancelIyzicoPayment -> {
+                _state.value = _state.value.copy(
+                    showWebView = false,
+                    webViewUrl = null,
+                    iyzicoToken = null
                 )
             }
         }
@@ -179,6 +191,18 @@ class PaymentViewModel @Inject constructor(
             }
         }
 
+        if (paymentMethod == "IYZICO") {
+            val rentalDetails = currentState.rentalDetails
+            if (rentalDetails != null) {
+                val totalPriceVal = rentalDetails.totalPrice ?: (rentalDetails.startFee + (rentalDetails.serviceFee ?: 0.0))
+                // Note: Discount code is not allowed for Iyzico payment as per OpenAPI spec
+                initializeIyzico(rentalId, totalPriceVal)
+            } else {
+                _state.value = currentState.copy(paymentError = "Kiralama detayları eksik")
+            }
+            return
+        }
+
         viewModelScope.launch {
             _state.value = _state.value.copy(isPaying = true, paymentError = null, paymentSuccess = false)
             try {
@@ -197,6 +221,98 @@ class PaymentViewModel @Inject constructor(
                     _effect.send(PaymentEffect.NavigateToDashboard)
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Ödeme gerçekleştirilemedi"
+                    _state.value = _state.value.copy(
+                        isPaying = false,
+                        paymentError = parseError(errorMsg)
+                    )
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isPaying = false,
+                    paymentError = e.message ?: "Bağlantı hatası oluştu"
+                )
+            }
+        }
+    }
+
+    private fun initializeIyzico(rentalId: String, price: Double) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isPaying = true, paymentError = null, paymentSuccess = false)
+            try {
+                val request = InitializeCheckoutFormDto(
+                    price = price,
+                    description = "RenCar yolculuk ödemesi",
+                    basketId = "rental-$rentalId",
+                    enabledInstallments = listOf(1)
+                )
+                val response = rentalRepository.initializeIyzico(request)
+                if (response.isSuccessful && response.body() != null) {
+                    val responseBody = response.body()!!
+                    _state.value = _state.value.copy(
+                        isPaying = false,
+                        showWebView = true,
+                        webViewUrl = responseBody.paymentPageUrl,
+                        iyzicoToken = responseBody.token
+                    )
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "İyzico ödeme başlatılamadı"
+                    _state.value = _state.value.copy(
+                        isPaying = false,
+                        paymentError = parseError(errorMsg)
+                    )
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isPaying = false,
+                    paymentError = e.message ?: "Bağlantı hatası oluştu"
+                )
+            }
+        }
+    }
+
+    private fun completeIyzicoPayment(token: String) {
+        val currentState = _state.value
+        val rentalId = currentState.rentalId
+
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isPaying = true,
+                paymentError = null,
+                showWebView = false,
+                webViewUrl = null
+            )
+            try {
+                val resultResponse = rentalRepository.getIyzicoResult(token)
+                if (resultResponse.isSuccessful && resultResponse.body() != null) {
+                    val paymentResult = resultResponse.body()!!
+                    if (paymentResult.paymentStatus == "SUCCESS") {
+                        val payRequest = PayRentalDto(
+                            method = "IYZICO",
+                            iyzicoPaymentId = paymentResult.paymentId
+                        )
+                        val payResponse = rentalRepository.payRental(rentalId, payRequest)
+                        if (payResponse.isSuccessful && payResponse.body() != null) {
+                            _state.value = _state.value.copy(
+                                isPaying = false,
+                                paymentSuccess = true,
+                                paymentReceipt = payResponse.body()!!
+                            )
+                            _effect.send(PaymentEffect.NavigateToDashboard)
+                        } else {
+                            val errorMsg = payResponse.errorBody()?.string() ?: "Ödeme kaydı oluşturulamadı"
+                            _state.value = _state.value.copy(
+                                isPaying = false,
+                                paymentError = parseError(errorMsg)
+                            )
+                        }
+                    } else {
+                        _state.value = _state.value.copy(
+                            isPaying = false,
+                            paymentError = "Ödeme işlemi başarısız: ${paymentResult.paymentStatus}"
+                        )
+                    }
+                } else {
+                    val errorMsg = resultResponse.errorBody()?.string() ?: "Ödeme durumu doğrulanamadı"
                     _state.value = _state.value.copy(
                         isPaying = false,
                         paymentError = parseError(errorMsg)

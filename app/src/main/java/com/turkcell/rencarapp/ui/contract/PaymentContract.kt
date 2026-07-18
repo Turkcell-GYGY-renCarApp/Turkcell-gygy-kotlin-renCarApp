@@ -20,10 +20,13 @@ data class PaymentState(
     val paymentError: String? = null,
     val paymentSuccess: Boolean = false,
     val paymentReceipt: PayRentalResponseDto? = null,
-    val selectedPaymentMethod: String = "CARD", // "CARD" or "WALLET"
+    val selectedPaymentMethod: String = "CARD", // "CARD", "WALLET" or "IYZICO"
     val walletBalance: Double = 0.0,
     val isWalletLoading: Boolean = false,
-    val walletError: String? = null
+    val walletError: String? = null,
+    val showWebView: Boolean = false,
+    val webViewUrl: String? = null,
+    val iyzicoToken: String? = null
 )
 
 sealed interface PaymentIntent {
@@ -35,6 +38,8 @@ sealed interface PaymentIntent {
     data class ChangeDiscountCode(val code: String) : PaymentIntent
     object PayRental : PaymentIntent
     object ClearErrors : PaymentIntent
+    data class CompleteIyzicoPayment(val token: String) : PaymentIntent
+    object CancelIyzicoPayment : PaymentIntent
 }
 
 sealed interface PaymentEffect {

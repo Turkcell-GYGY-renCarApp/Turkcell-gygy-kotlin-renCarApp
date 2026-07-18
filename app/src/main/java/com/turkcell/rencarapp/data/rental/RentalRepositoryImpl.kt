@@ -54,6 +54,14 @@ class RentalRepositoryImpl @Inject constructor(
         return rentalApi.payRental(id, request)
     }
 
+    override suspend fun initializeIyzico(request: InitializeCheckoutFormDto): Response<CheckoutFormInitializeResponseDto> {
+        return rentalApi.initializeIyzico(request)
+    }
+
+    override suspend fun getIyzicoResult(token: String): Response<IyzicoPaymentResponseDto> {
+        return rentalApi.getIyzicoResult(token)
+    }
+
     override suspend fun getRentals(): Response<List<RentalResponseDto>> {
         return rentalApi.getRentals()
     }

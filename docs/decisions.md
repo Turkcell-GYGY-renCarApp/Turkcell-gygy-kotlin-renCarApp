@@ -197,11 +197,23 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
 * **Karar:** Kiralama geçmişi sekmesinde (tab) listelenecek geçmiş kiralamalar ve bu aya ait özet istatistik bilgisi için REST API `/rentals` ve `/rentals/stats` entegrasyonu gerçekleştirilmiştir. Görsel olarak her kartın sol tarafında statik harita görseli yerine Compose Canvas üzerinde özelleştirilmiş deterministik bir rota çizimi (`RoutePreview`) eklenmiştir. Kartlar süre ve mesafe bilgilerini içeren hap tasarımlı rozetler (pills) ile fiyat bilgisini içerecek şekilde düzenlenmiştir.
   * **Gerekçe:** Kullanıcıların geçmiş kiralamalarını ve bu aya ait özet harcamalarını ekran görüntüsündeki modern tasarımla (açık ve koyu tema uyumlu) eşleşecek ve performanslı yüklenecek şekilde sunmak.
   * **İlgili Dosyalar:**
-    * RentalDto.kt
-    * RentalApi.kt
-    * RentalRepository.kt
-    * RentalRepositoryImpl.kt
-    * HistoryContract.kt
-    * HistoryViewModel.kt
-    * HistoryScreen.kt
-    * MainDashboardScreen.kt
+  * RentalDto.kt
+  * RentalApi.kt
+  * RentalRepository.kt
+  * RentalRepositoryImpl.kt
+  * HistoryContract.kt
+  * HistoryViewModel.kt
+  * HistoryScreen.kt
+  * MainDashboardScreen.kt
+
+## 18. Iyzico Ödeme Yöntemi Entegrasyonu
+* **Karar:** Ödeme ekranına Iyzico ("IYZICO" metodu ile) ödeme yöntemi eklenmiştir. Kullanıcı bu yöntemi seçtiğinde backend'de `/iyzico/checkout-form/initialize` endpoint'ine istek atılarak ödeme formu başlatılır. Alınan `paymentPageUrl` adresi güvenli bir şekilde tam ekran Android `WebView` içinde açılır. WebView'daki yönlendirmeler taranarak `/iyzico/checkout-form/callback` adresi ve `token` parametresi yakalandığında WebView kapatılır. Alınan token ile `/iyzico/checkout-form/result/{token}` üzerinden sorgulama yapılır; eğer durum `SUCCESS` ise kiralama ödemesi elde edilen `paymentId` (`iyzicoPaymentId` olarak) ile `/rentals/{id}/pay` endpoint'i üzerinden tamamlanır.
+* **Gerekçe:** Kullanıcıların kredi kartı ve cüzdanın yanı sıra Iyzico Ortak Ödeme Formu aracılığıyla kart bilgilerini doğrudan ve güvenle Iyzico altyapısında girerek ödeme yapabilmelerini sağlamak.
+* **İlgili Dosyalar:**
+  * RentalDto.kt
+  * RentalApi.kt
+  * RentalRepository.kt
+  * RentalRepositoryImpl.kt
+  * PaymentContract.kt
+  * PaymentViewModel.kt
+  * PaymentSummaryScreen.kt

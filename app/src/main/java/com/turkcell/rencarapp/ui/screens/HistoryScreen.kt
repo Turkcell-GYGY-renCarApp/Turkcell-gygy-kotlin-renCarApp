@@ -40,97 +40,88 @@ fun HistoryScreen(
     val spacing = LocalRencarSpacing.current
     val isDark = isSystemInDarkTheme()
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            if (state.isLoadingRentals && state.rentals.isEmpty()) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        if (state.isLoadingRentals && state.rentals.isEmpty()) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else if (state.rentalsError != null && state.rentals.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(spacing.xl),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = state.rentalsError ?: "Yükleme hatası",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge
                 )
-            } else if (state.rentalsError != null && state.rentals.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(spacing.xl),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Spacer(modifier = Modifier.height(spacing.md))
+                Button(
+                    onClick = { viewModel.onIntent(HistoryIntent.Refresh) }
                 ) {
-                    Text(
-                        text = state.rentalsError ?: "Yükleme hatası",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.height(spacing.md))
-                    Button(
-                        onClick = { viewModel.onIntent(HistoryIntent.Refresh) }
-                    ) {
-                        Text(text = "Tekrar Dene")
-                    }
+                    Text(text = "Tekrar Dene")
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .padding(horizontal = spacing.md),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(horizontal = spacing.md),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(spacing.xl))
+                    // Screen Title
+                    Text(
+                        text = "Kiralamalarım",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Stats Summary
+                    val tripCount = state.stats?.tripCount ?: 0
+                    val totalSpent = state.stats?.totalSpent?.toInt() ?: 0
+                    Text(
+                        text = "Bu ay $tripCount yolculuk • ₺$totalSpent harcama",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(spacing.lg))
+                }
+
+                if (state.rentals.isEmpty()) {
                     item {
-                        Spacer(modifier = Modifier.height(spacing.xl))
-                        // Screen Title
-                        Text(
-                            text = "Kiralamalarım",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Stats Summary
-                        val tripCount = state.stats?.tripCount ?: 0
-                        val totalSpent = state.stats?.totalSpent?.toInt() ?: 0
-                        Text(
-                            text = "Bu ay $tripCount yolculuk • ₺$totalSpent harcama",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(spacing.lg))
-                    }
-
-                    if (state.rentals.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 40.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Henüz kiralama geçmişiniz bulunmuyor.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    } else {
-                        items(state.rentals) { rental ->
-                            RentalHistoryItem(rental = rental, isDark = isDark)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Henüz kiralama geçmişiniz bulunmuyor.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
-
-                    item {
-                        Spacer(modifier = Modifier.height(spacing.xl))
+                } else {
+                    items(state.rentals) { rental ->
+                        RentalHistoryItem(rental = rental, isDark = isDark)
                     }
                 }
             }

@@ -49,6 +49,16 @@ interface RentalApi {
         @Body request: PayRentalDto
     ): Response<PayRentalResponseDto>
 
+    @POST("iyzico/checkout-form/initialize")
+    suspend fun initializeIyzico(
+        @Body request: InitializeCheckoutFormDto
+    ): Response<CheckoutFormInitializeResponseDto>
+
+    @GET("iyzico/checkout-form/result/{token}")
+    suspend fun getIyzicoResult(
+        @Path("token") token: String
+    ): Response<IyzicoPaymentResponseDto>
+
     @GET("rentals")
     suspend fun getRentals(): Response<List<RentalResponseDto>>
 
