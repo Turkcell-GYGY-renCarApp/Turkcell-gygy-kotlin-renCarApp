@@ -192,3 +192,16 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * PaymentContract.kt
     * PaymentViewModel.kt
     * PaymentSummaryScreen.kt
+
+## 17. Kiralama Geçmişi (Rental History) Ekranı ve Entegrasyonu
+* **Karar:** Kiralama geçmişi sekmesinde (tab) listelenecek geçmiş kiralamalar ve bu aya ait özet istatistik bilgisi için REST API `/rentals` ve `/rentals/stats` entegrasyonu gerçekleştirilmiştir. Görsel olarak her kartın sol tarafında statik harita görseli yerine Compose Canvas üzerinde özelleştirilmiş deterministik bir rota çizimi (`RoutePreview`) eklenmiştir. Kartlar süre ve mesafe bilgilerini içeren hap tasarımlı rozetler (pills) ile fiyat bilgisini içerecek şekilde düzenlenmiştir.
+  * **Gerekçe:** Kullanıcıların geçmiş kiralamalarını ve bu aya ait özet harcamalarını ekran görüntüsündeki modern tasarımla (açık ve koyu tema uyumlu) eşleşecek ve performanslı yüklenecek şekilde sunmak.
+  * **İlgili Dosyalar:**
+    * RentalDto.kt
+    * RentalApi.kt
+    * RentalRepository.kt
+    * RentalRepositoryImpl.kt
+    * HistoryContract.kt
+    * HistoryViewModel.kt
+    * HistoryScreen.kt
+    * MainDashboardScreen.kt

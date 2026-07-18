@@ -53,4 +53,12 @@ class RentalRepositoryImpl @Inject constructor(
     override suspend fun payRental(id: String, request: PayRentalDto): Response<PayRentalResponseDto> {
         return rentalApi.payRental(id, request)
     }
+
+    override suspend fun getRentals(): Response<List<RentalResponseDto>> {
+        return rentalApi.getRentals()
+    }
+
+    override suspend fun getRentalStats(month: String?): Response<RentalStatsResponseDto> {
+        return rentalApi.getRentalStats(month)
+    }
 }

@@ -128,3 +128,13 @@ data class FinishRentalResponseDto(
     val usageFee: Double,
     val elapsedSeconds: Double
 )
+
+@Serializable
+data class RentalStatsResponseDto(
+    val month: String,
+    val tripCount: Int,
+    val totalSpent: Double,
+    val totalMinutes: Double,
+    val totalKm: Double
+)
+

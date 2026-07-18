@@ -126,10 +126,7 @@ fun MainDashboardScreen(
                     activeRental = activeRentalState.activeRental,
                     onExpandRentalClick = onExpandRental
                 )
-                DashboardTab.History -> PaymentSummaryScreen(
-                    rentalId = "clx0rent1234567890",
-                    onPaymentSuccess = { currentTab = DashboardTab.Map }
-                )
+                DashboardTab.History -> HistoryScreen()
                 DashboardTab.Wallet -> WalletScreen()
                 DashboardTab.Profile -> ProfileScreen(
                     isDarkTheme = isDarkTheme,

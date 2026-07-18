@@ -48,4 +48,12 @@ interface RentalApi {
         @Path("id") id: String,
         @Body request: PayRentalDto
     ): Response<PayRentalResponseDto>
+
+    @GET("rentals")
+    suspend fun getRentals(): Response<List<RentalResponseDto>>
+
+    @GET("rentals/stats")
+    suspend fun getRentalStats(
+        @retrofit2.http.Query("month") month: String? = null
+    ): Response<RentalStatsResponseDto>
 }
