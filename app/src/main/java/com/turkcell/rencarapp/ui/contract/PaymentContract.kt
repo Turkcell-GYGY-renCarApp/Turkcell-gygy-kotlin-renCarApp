@@ -19,13 +19,19 @@ data class PaymentState(
     val cardsError: String? = null,
     val paymentError: String? = null,
     val paymentSuccess: Boolean = false,
-    val paymentReceipt: PayRentalResponseDto? = null
+    val paymentReceipt: PayRentalResponseDto? = null,
+    val selectedPaymentMethod: String = "CARD", // "CARD" or "WALLET"
+    val walletBalance: Double = 0.0,
+    val isWalletLoading: Boolean = false,
+    val walletError: String? = null
 )
 
 sealed interface PaymentIntent {
     data class LoadDetails(val rentalId: String) : PaymentIntent
     object LoadCards : PaymentIntent
+    object LoadWallet : PaymentIntent
     data class SelectCard(val card: CardResponseDto) : PaymentIntent
+    data class SelectPaymentMethod(val method: String) : PaymentIntent
     data class ChangeDiscountCode(val code: String) : PaymentIntent
     object PayRental : PaymentIntent
     object ClearErrors : PaymentIntent

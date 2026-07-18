@@ -184,3 +184,11 @@ Bu doküman, RenCar araç kiralama mobil uygulamasının geliştirilmesi aşamas
     * ActiveRentalViewModel.kt
     * ActiveRentalContract.kt
     * RentalRepository.kt, RentalRepositoryImpl.kt
+
+## 16. Cüzdan ile Ödeme Entegrasyonu ve Son İşlemler
+* **Karar:** Kiralama bitimindeki ödeme ekranında kullanıcının kayıtlı kartlarının yanı sıra cüzdan bakiyesini de kullanarak ödeme yapabilmesi ("WALLET" metodu ile) sağlanmıştır. Ödeme öncesinde cüzdan bakiyesi WalletRepository aracılığıyla sorgulanmakta ve yetersiz bakiye durumunda işlem engellenerek arayüzde uyarı verilmektedir. Ödeme başarıyla tamamlandığında backend cüzdan bakiyesini günceller ve işlemi cüzdan hareketlerine (son işlemler) ekler.
+  * **Gerekçe:** Kullanıcıların kredi kartı dışında cüzdan bakiyelerini de kiralama ücretlerini ödemek için esnek bir şekilde kullanabilmelerini sağlamak ve harcamalarını cüzdan işlem geçmişinde şeffaf bir şekilde gösterebilmek.
+  * **İlgili Dosyalar:**
+    * PaymentContract.kt
+    * PaymentViewModel.kt
+    * PaymentSummaryScreen.kt

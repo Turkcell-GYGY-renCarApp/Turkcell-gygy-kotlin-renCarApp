@@ -41,6 +41,7 @@ fun PaymentSummaryScreen(
     LaunchedEffect(rentalId) {
         viewModel.onIntent(PaymentIntent.LoadDetails(rentalId))
         viewModel.onIntent(PaymentIntent.LoadCards)
+        viewModel.onIntent(PaymentIntent.LoadWallet)
     }
 
     LaunchedEffect(state.paymentSuccess) {
@@ -269,7 +270,9 @@ fun PaymentSummaryScreen(
 
                         // Payment Method Selection Card
                         PaymentMethodCard(
+                            paymentMethod = state.selectedPaymentMethod,
                             selectedCard = state.selectedCard,
+                            walletBalance = state.walletBalance,
                             onChangeClick = { showBottomSheet = true }
                         )
 
@@ -342,6 +345,82 @@ fun PaymentSummaryScreen(
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
 
+                // Cüzdan Seçeneği
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (state.selectedPaymentMethod == "WALLET") MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                            else Color.Transparent
+                        )
+                        .clickable {
+                            viewModel.onIntent(PaymentIntent.SelectPaymentMethod("WALLET"))
+                            showBottomSheet = false
+                        }
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp, 26.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = RencarIcons.Wallet,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column {
+                            Text(
+                                text = "Cüzdan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (state.isWalletLoading) "Yükleniyor..." else String.format(Locale.US, "Bakiye: ₺%.2f", state.walletBalance),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    RadioButton(
+                        selected = state.selectedPaymentMethod == "WALLET",
+                        onClick = {
+                            viewModel.onIntent(PaymentIntent.SelectPaymentMethod("WALLET"))
+                            showBottomSheet = false
+                        },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Kayıtlı Kartlar",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
                 if (state.isCardsLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier
@@ -354,14 +433,15 @@ fun PaymentSummaryScreen(
                         text = "Kayıtlı kartınız bulunmamaktadır.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 24.dp)
+                        modifier = Modifier.padding(vertical = 12.dp)
                     )
                 } else {
                     state.cards.forEach { card ->
                         CardRow(
                             card = card,
-                            isSelected = state.selectedCard?.id == card.id,
+                            isSelected = state.selectedPaymentMethod == "CARD" && state.selectedCard?.id == card.id,
                             onClick = {
+                                viewModel.onIntent(PaymentIntent.SelectPaymentMethod("CARD"))
                                 viewModel.onIntent(PaymentIntent.SelectCard(card))
                                 showBottomSheet = false
                             }
@@ -441,7 +521,9 @@ fun BreakdownRow(
 
 @Composable
 fun PaymentMethodCard(
+    paymentMethod: String,
     selectedCard: CardResponseDto?,
+    walletBalance: Double,
     onChangeClick: () -> Unit
 ) {
     Box(
@@ -467,36 +549,69 @@ fun PaymentMethodCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // VISA / Mastercard icon simulation
-                Box(
-                    modifier = Modifier
-                        .size(44.dp, 30.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF0F172A)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (selectedCard?.brand == "MASTERCARD") "MC" else "VISA",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                if (paymentMethod == "WALLET") {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp, 30.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = RencarIcons.Wallet,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                Column {
-                    Text(
-                        text = selectedCard?.let { "•••• ${it.last4}" } ?: "Ödeme Yöntemi Ekle",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = selectedCard?.let { "Kişisel kart" } ?: "Kayıtlı kart bulunamadı",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
+                    Column {
+                        Text(
+                            text = "Cüzdan",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = String.format(Locale.US, "Bakiye: ₺%.2f", walletBalance),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                } else {
+                    // VISA / Mastercard icon simulation
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp, 30.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF0F172A)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (selectedCard?.brand == "MASTERCARD") "MC" else "VISA",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
+                        Text(
+                            text = selectedCard?.let { "•••• ${it.last4}" } ?: "Ödeme Yöntemi Ekle",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = selectedCard?.let { "Kişisel kart" } ?: "Kayıtlı kart bulunamadı",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
                 }
             }
 
