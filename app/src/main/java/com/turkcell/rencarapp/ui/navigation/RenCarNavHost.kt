@@ -120,7 +120,8 @@ fun RenCarNavHost(
                 }
             )
         }
-        composable(Screen.MainDashboard.route) {
+        composable(Screen.MainDashboard.route) { backStackEntry ->
+            val isMinimized = backStackEntry.savedStateHandle.getStateFlow("rental_minimized", false).collectAsState().value
             MainDashboardScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeToggle = onThemeToggle,
@@ -138,9 +139,14 @@ fun RenCarNavHost(
                     navController.navigate(Screen.VehiclePhotoUpload.createRoute(vehicleId))
                 },
                 onActiveRentalFound = { rentalId ->
-                    navController.navigate(Screen.ActiveRental.createRoute(rentalId)) {
-                        popUpTo(Screen.MainDashboard.route) { inclusive = true }
-                    }
+                    navController.navigate(Screen.ActiveRental.createRoute(rentalId))
+                },
+                isRentalInitiallyMinimized = isMinimized,
+                onMinimizeRental = {
+                    backStackEntry.savedStateHandle["rental_minimized"] = true
+                },
+                onExpandRental = {
+                    backStackEntry.savedStateHandle["rental_minimized"] = false
                 }
             )
         }
@@ -224,9 +230,14 @@ fun RenCarNavHost(
             ActiveRentalScreen(
                 rentalId = rentalId,
                 onEndSuccess = { rId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("rental_minimized", false)
                     navController.navigate(Screen.PaymentSummary.createRoute(rId)) {
                         popUpTo(Screen.MainDashboard.route) { inclusive = true }
                     }
+                },
+                onMinimizeClick = {
+                    navController.previousBackStackEntry?.savedStateHandle?.set("rental_minimized", true)
+                    navController.popBackStack()
                 }
             )
         }

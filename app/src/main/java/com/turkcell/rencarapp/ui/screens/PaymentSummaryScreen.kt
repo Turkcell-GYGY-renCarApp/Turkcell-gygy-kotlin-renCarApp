@@ -327,7 +327,8 @@ fun PaymentSummaryScreen(
             onDismissRequest = { showBottomSheet = false },
             sheetState = rememberModalBottomSheetState(),
             containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
         ) {
             Column(
                 modifier = Modifier
